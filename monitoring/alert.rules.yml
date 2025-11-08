@@ -1,0 +1,320 @@
+# NASA System 7 Portal - Production Alert Rules
+# Comprehensive alerting for system health and performance
+
+groups:
+  # ===== System Health Alerts =====
+  - name: system_health
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}. Current value: {{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}. Current value: {{ $value }}%"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is below 10% on {{ $labels.device }} at {{ $labels.instance }}. Current value: {{ $value }}%"
+
+  # ===== Application Health Alerts =====
+  - name: application_health
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: application
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 3m
+        labels:
+          severity: warning
+          team: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }}% for service {{ $labels.job }} on {{ $labels.instance }}"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: application
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for service {{ $labels.job }}"
+
+      - alert: LowThroughput
+        expr: rate(http_requests_total[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: application
+        annotations:
+          summary: "Low request throughput"
+          description: "Request throughput is {{ $value }} req/s for service {{ $labels.job }} on {{ $labels.instance }}"
+
+  # ===== Database Alerts =====
+  - name: database_health
+    rules:
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database on {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "High PostgreSQL connections"
+          description: "PostgreSQL connection usage is {{ $value }}% of maximum connections"
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_statements_mean_time_seconds[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "Slow PostgreSQL queries detected"
+          description: "Average query time is {{ $value }}s, which indicates slow queries"
+
+      - alert: PostgreSQLReplicationLag
+        expr: pg_replication_lag_seconds > 60
+        for: 2m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "PostgreSQL replication lag"
+          description: "Replication lag is {{ $value }}s on {{ $labels.instance }}"
+
+  # ===== Redis Alerts =====
+  - name: redis_health
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache on {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: cache
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value }}% of maximum memory"
+
+      - alert: RedisHighConnections
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: cache
+        annotations:
+          summary: "High Redis connections"
+          description: "Redis has {{ $value }} connected clients"
+
+      - alert: RedisLowHitRate
+        expr: rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) * 100 < 50
+        for: 10m
+        labels:
+          severity: warning
+          team: cache
+        annotations:
+          summary: "Low Redis hit rate"
+          description: "Redis cache hit rate is {{ $value }}%"
+
+  # ===== NGINX Alerts =====
+  - name: nginx_health
+    rules:
+      - alert: NginxHighResponseTime
+        expr: histogram_quantile(0.95, rate(nginx_request_duration_seconds_bucket[5m])) > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High NGINX response time"
+          description: "95th percentile NGINX response time is {{ $value }}s"
+
+      - alert: NginxHighErrorRate
+        expr: rate(nginx_http_requests_total{status=~"5.."}[5m]) / rate(nginx_http_requests_total[5m]) * 100 > 5
+        for: 3m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High NGINX error rate"
+          description: "NGINX error rate is {{ $value }}%"
+
+      - alert: NginxHighConnections
+        expr: nginx_connections_active > 1000
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High NGINX connections"
+          description: "NGINX has {{ $value }} active connections"
+
+  # ===== NASA API Monitoring =====
+  - name: nasa_api_monitoring
+    rules:
+      - alert: NASAAPIDown
+        expr: probe_success{instance=~"https://api.nasa.gov.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: external
+        annotations:
+          summary: "NASA API is down"
+          description: "NASA API at {{ $labels.instance }} is not responding"
+
+      - alert: NASAAPIHighResponseTime
+        expr: probe_duration_seconds{instance=~"https://api.nasa.gov.*"} > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: external
+        annotations:
+          summary: "High NASA API response time"
+          description: "NASA API response time is {{ $value }}s"
+
+      - alert: JPLAPIDown
+        expr: probe_success{instance=~"https://ssd-api.jpl.nasa.gov.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: external
+        annotations:
+          summary: "JPL API is down"
+          description: "JPL API at {{ $labels.instance }} is not responding"
+
+  # ===== Security Alerts =====
+  - name: security_monitoring
+    rules:
+      - alert: HighAuthenticationFailures
+        expr: rate(auth_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is {{ $value }} per second"
+
+      - alert: SuspiciousActivity
+        expr: rate(suspicious_requests_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "Suspicious request rate is {{ $value }} per second"
+
+      - alert: UnauthorizedAccess
+        expr: increase(unauthorized_requests_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Unauthorized access attempt"
+          description: "Unauthorized access attempts detected: {{ $value }} in last 5 minutes"
+
+  # ===== Business Metrics Alerts =====
+  - name: business_metrics
+    rules:
+      - alert: LowUserActivity
+        expr: rate(active_users_total[5m]) < 0.1
+        for: 15m
+        labels:
+          severity: warning
+          team: business
+        annotations:
+          summary: "Low user activity"
+          description: "User activity rate is {{ $value }} users per second"
+
+      - alert: DataStale
+        expr: time() - data_last_update_timestamp_seconds > 3600
+        for: 5m
+        labels:
+          severity: warning
+          team: data
+        annotations:
+          summary: "Stale data detected"
+          description: "Data has not been updated for {{ $value | humanizeDuration }}"
+
+  # ===== Container Health Alerts =====
+  - name: container_health
+    rules:
+      - alert: ContainerRestarting
+        expr: rate(container_start_time_seconds[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Container frequently restarting"
+          description: "Container {{ $labels.name }} is restarting frequently"
+
+      - alert: ContainerOOMKilled
+        expr: increase(container_oom_events_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Container OOM killed"
+          description: "Container {{ $labels.name }} was OOM killed {{ $value }} times"
+
+      - alert: ContainerHighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is {{ $value }}%"

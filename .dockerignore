@@ -1,0 +1,102 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+docs/
+CLAUDE.md
+CONTRIBUTING.md
+SECURITY_IMPLEMENTATION_GUIDE.md
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node modules (root level)
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Temporary files
+tmp
+temp
+.tmp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build artifacts (root level)
+dist
+build
+
+# Archive
+archive/
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# Scripts that shouldn't be in production containers
+scripts/
+fix_project.sh
+
+# Docker files (except those needed for build)
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Monitoring configuration (will be mounted as read-only)
+monitoring/
+
+# SSL certificates
+ssl/
+*.crt
+*.key
+
+# Backup directories
+backups/
+
+# Local development
+.local
+
+# Testing
+test
+tests
+__tests__

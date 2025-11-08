@@ -2,28 +2,29 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
-import EnhancedApodApp from '../EnhancedApodApp';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import EnhancedApodApp from '../EnhancedApodApp.jsx';
 
 // Mock NASA API calls
-jest.mock('../../../services/api', () => ({
-    getApod: jest.fn(),
-    getApodForDate: jest.fn(),
-    getEnhancedApod: jest.fn(),
+vi.mock('../../../services/api', () => ({
+    getApod: vi.fn(),
+    getApodForDate: vi.fn(),
+    getEnhancedApod: vi.fn(),
 }));
 
 // Mock AppContext
-jest.mock('../../../contexts/AppContext', () => ({
+vi.mock('../../../contexts/AppContext.jsx', () => ({
     useApps: () => ({
-        openApp: jest.fn(),
+        openApp: vi.fn(),
     }),
 }));
 
 // Mock localStorage
 const localStorageMock = {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
 };
 global.localStorage = localStorageMock;
 
@@ -81,7 +82,7 @@ const renderWithProviders = (component) => {
 
 describe('Enhanced APOD App Component', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         localStorageMock.getItem.mockReturnValue(null);
 
         const { getApod } = require('../../../services/api');
@@ -197,7 +198,7 @@ describe('Enhanced APOD App Component', () => {
             });
 
             // Mock current date to be before the test date
-            jest.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-03').getTime());
+            vi.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-03').getTime());
 
             renderWithProviders(<EnhancedApodApp />);
 
@@ -388,15 +389,15 @@ describe('Enhanced APOD App Component', () => {
     describe('Download Functionality', () => {
         it('should trigger download when download button is clicked', async () => {
             // Mock fetch for download
-            global.fetch = jest.fn(() =>
+            global.fetch = vi.fn(() =>
                 Promise.resolve({
                     blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' }))
                 })
             );
 
             // Mock URL.createObjectURL and revokeObjectURL
-            global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
-            global.URL.revokeObjectURL = jest.fn();
+            global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+            global.URL.revokeObjectURL = vi.fn();
 
             renderWithProviders(<EnhancedApodApp />);
 

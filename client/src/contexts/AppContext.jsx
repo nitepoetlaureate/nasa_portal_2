@@ -1,8 +1,8 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
-import EnhancedApodApp from '../components/apps/EnhancedApodApp';
-import NeoWsEnhancedApp from '../components/apps/NeoWsEnhancedApp';
-import EnhancedResourceNavigatorApp from '../components/apps/EnhancedResourceNavigatorApp';
-import ImageViewerApp from '../components/apps/ImageViewerApp';
+import EnhancedApodApp from '../components/apps/EnhancedApodApp.jsx';
+import NeoWsEnhancedApp from '../components/apps/NeoWsEnhancedApp.jsx';
+import EnhancedResourceNavigatorApp from '../components/apps/EnhancedResourceNavigatorApp.jsx';
+import ImageViewerApp from '../components/apps/ImageViewerApp.jsx';
 
 const AppContext = createContext();
 

@@ -1,0 +1,227 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@nasa-system7.com'
+  smtp_auth_username: 'alerts@nasa-system7.com'
+  smtp_auth_password: 'your-smtp-password'
+
+# Default templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      group_interval: 5s
+      repeat_interval: 30m
+
+    # Security alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'security-alerts'
+      group_wait: 0s
+      group_interval: 5s
+      repeat_interval: 15m
+
+    # Warning alerts - batch notifications
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 5m
+      group_interval: 15m
+      repeat_interval: 4h
+
+    # NASA API specific alerts
+    - match:
+        alertname: 'NASAAPIDown'
+      receiver: 'nasa-api-alerts'
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 30m
+
+    # Database specific alerts
+    - match_re:
+        service: 'database|postgres'
+      receiver: 'database-alerts'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 2h
+
+# Receivers configuration
+receivers:
+  # Default receiver
+  - name: 'default'
+    email_configs:
+      - to: 'admin@nasa-system7.com'
+        subject: 'NASA System 7 Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts'
+        title: 'NASA System 7 Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          {{ end }}
+
+  # Critical alerts - immediate notification
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'oncall@nasa-system7.com,admin@nasa-system7.com'
+        subject: '🚨 CRITICAL: NASA System 7 - {{ .GroupLabels.alertname }}'
+        body: |
+          🚨 CRITICAL ALERT 🚨
+
+          Application: NASA System 7 Portal
+          Environment: {{ .GroupLabels.environment | default "production" }}
+
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Started: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+
+          Labels:
+          {{ range .Labels.SortedPairs }}  - {{ .Name }}: {{ .Value }}
+          {{ end }}
+          {{ end }}
+
+          Immediate action required!
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#critical-alerts'
+        color: 'danger'
+        title: '🚨 CRITICAL: NASA System 7 Alert'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          {{ end }}
+    webhook_configs:
+      - url: 'http://localhost:8080/critical-alert'
+        send_resolved: true
+
+  # Security alerts
+  - name: 'security-alerts'
+    email_configs:
+      - to: 'security@nasa-system7.com,admin@nasa-system7.com'
+        subject: '🔒 SECURITY: NASA System 7 - {{ .GroupLabels.alertname }}'
+        body: |
+          🔒 SECURITY ALERT 🔒
+
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Source IP: {{ .Labels.ip | default "Unknown" }}
+          Endpoint: {{ .Labels.endpoint | default "Unknown" }}
+          Started: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+
+          Please investigate immediately.
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#security'
+        color: 'warning'
+        title: '🔒 Security Alert'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          IP: {{ .Labels.ip | default "Unknown" }}
+          {{ end }}
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'team@nasa-system7.com'
+        subject: '⚠️ WARNING: NASA System 7 - {{ .GroupLabels.alertname }}'
+        body: |
+          ⚠️ WARNING ALERT ⚠️
+
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Started: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+
+          Please monitor the situation.
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#warnings'
+        color: 'warning'
+        title: '⚠️ Warning Alert'
+
+  # NASA API alerts
+  - name: 'nasa-api-alerts'
+    email_configs:
+      - to: 'api-team@nasa-system7.com'
+        subject: 'NASA API Issue - {{ .GroupLabels.alertname }}'
+        body: |
+          NASA API connectivity issue detected.
+
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Endpoint: {{ .Labels.endpoint }}
+          {{ end }}
+
+          Please check API status and rate limits.
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#api-alerts'
+        color: 'warning'
+        title: 'NASA API Alert'
+
+  # Database alerts
+  - name: 'database-alerts'
+    email_configs:
+      - to: 'db-team@nasa-system7.com'
+        subject: 'Database Alert - {{ .GroupLabels.alertname }}'
+        body: |
+          Database performance or connectivity issue.
+
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+
+          Please investigate database performance.
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#database'
+        color: 'warning'
+        title: 'Database Alert'
+
+# Inhibition rules to prevent alert spam
+inhibit_rules:
+  # Inhibit warnings if there's a critical alert for the same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+
+  # Inhibit database alerts if the entire application is down
+  - source_match:
+      alertname: 'ApplicationDown'
+    target_match_re:
+      alertname: '(PostgreSQLDown|RedisDown)'
+    equal: ['instance']
+
+# Silence configuration (can be managed via API)
+silences: []

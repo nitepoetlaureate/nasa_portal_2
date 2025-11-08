@@ -1,0 +1,108 @@
+{
+  "name": "nasa-system7-server-security-update",
+  "version": "1.0.0-security",
+  "description": "Security-focused package updates for NASA System 7 Portal",
+  "securityDependencies": {
+    "express-validator": "^7.0.1",
+    "joi": "^17.11.0",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "crypto": "^1.0.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-slow-down": "^2.0.1",
+    "cors": "^2.8.5"
+  },
+  "securityScripts": {
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:fix": "npm audit fix --force",
+    "security:check": "npm ls --depth=0",
+    "security:outdated": "npm outdated",
+    "security:monitor": "npm audit --json > security-audit.json"
+  },
+  "criticalUpdates": [
+    {
+      "package": "express-validator",
+      "current": "^7.0.1",
+      "reason": "Input validation and sanitization",
+      "priority": "HIGH"
+    },
+    {
+      "package": "joi",
+      "current": "^17.11.0",
+      "reason": "Environment variable validation",
+      "priority": "HIGH"
+    },
+    {
+      "package": "jsonwebtoken",
+      "current": "^9.0.2",
+      "reason": "JWT authentication",
+      "priority": "HIGH"
+    },
+    {
+      "package": "bcryptjs",
+      "current": "^2.4.3",
+      "reason": "Password hashing",
+      "priority": "HIGH"
+    }
+  ],
+  "dependencySecurityStatus": {
+    "vulnerableDependencies": [
+      {
+        "package": "tmp",
+        "severity": "LOW",
+        "CVE": "GHSA-52f5-9888-hmc6",
+        "fixAvailable": true,
+        "action": "npm audit fix"
+      }
+    ],
+    "outdatedDependencies": [
+      {
+        "package": "express",
+        "current": "^4.18.2",
+        "latest": "^4.19.2",
+        "securityRelevant": true
+      },
+      {
+        "package": "axios",
+        "current": "^1.6.0",
+        "latest": "^1.6.5",
+        "securityRelevant": true
+      }
+    ]
+  },
+  "recommendedCommands": {
+    "immediate": [
+      "npm audit fix --force",
+      "npm update express axios helmet cors",
+      "npm install express-validator joi jsonwebtoken bcryptjs"
+    ],
+    "postInstall": [
+      "npm audit",
+      "npm ls --depth=0",
+      "npm outdated"
+    ]
+  },
+  "securityConfiguration": {
+    "packageJsonUpdates": {
+      "scripts": {
+        "preinstall": "npm run security:audit",
+        "postinstall": "npm run security:check",
+        "security:audit": "npm audit --audit-level=moderate",
+        "security:fix": "npm audit fix --force",
+        "security:monitor": "npm audit --json > security-audit.json"
+      },
+      "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+      }
+    },
+    "npmConfig": {
+      "audit": true,
+      "audit-level": "moderate",
+      "fund": false,
+      "optional": false
+    }
+  }
+}

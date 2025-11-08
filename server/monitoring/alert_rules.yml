@@ -1,0 +1,225 @@
+groups:
+  - name: application.rules
+    rules:
+      # Application Health Alerts
+      - alert: ApplicationDown
+        expr: up{job="nasa-system7-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NASA System 7 Server is down"
+          description: "The NASA System 7 server has been down for more than 1 minute."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second over the last 5 minutes."
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds."
+
+      - alert: MemoryUsageHigh
+        expr: (process_resident_memory_bytes / 1024 / 1024) > 512
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}MB, exceeding the 512MB threshold."
+
+      - alert: CPUUsageHigh
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%, exceeding the 80% threshold."
+
+  - name: nasa-api.rules
+    rules:
+      # NASA API Monitoring
+      - alert: NASAAPIDown
+        expr: nasa_api_requests_total{status="error"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NASA API connection issues"
+          description: "NASA API requests are failing with errors."
+
+      - alert: NASAAPILatencyHigh
+        expr: nasa_api_request_duration_seconds{quantile="0.95"} > 5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NASA API latency is high"
+          description: "95th percentile NASA API response time is {{ $value }} seconds."
+
+      - alert: NASAAPIRateLimitHit
+        expr: increase(nasa_api_rate_limited_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NASA API rate limit being hit frequently"
+          description: "Rate limit hit {{ $value }} times in the last 5 minutes."
+
+  - name: database.rules
+    rules:
+      # Database Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgresql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database connection has been lost."
+
+      - alert: PostgreSQLConnectionsHigh
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of PostgreSQL connections"
+          description: "{{ $value }} active connections, exceeding the threshold of 80."
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_statements_mean_time_seconds[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow PostgreSQL queries detected"
+          description: "Average query time is {{ $value }} seconds."
+
+      - alert: PostgreSQLLocksHigh
+        expr: pg_locks_count > 10
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of PostgreSQL locks"
+          description: "{{ $value }} locks detected, potential deadlock."
+
+  - name: redis.rules
+    rules:
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache connection has been lost."
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}."
+
+      - alert: RedisConnectionsHigh
+        expr: redis_connected_clients > 50
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis connections"
+          description: "{{ $value }} connected clients."
+
+      - alert: RedisCacheHitRateLow
+        expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low Redis cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}."
+
+  - name: infrastructure.rules
+    rules:
+      # Infrastructure Alerts
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% available."
+
+      - alert: HighLoadAverage
+        expr: node_load15 > 4
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High system load"
+          description: "15-minute load average is {{ $value }}."
+
+      - alert: NetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Network errors detected"
+          description: "{{ $value }} network errors per second."
+
+  - name: security.rules
+    rules:
+      # Security Alerts
+      - alert: SuspiciousLoginAttempts
+        expr: rate(login_attempts_total{status="failed"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Suspicious login activity"
+          description: "High rate of failed login attempts: {{ $value }} per minute."
+
+      - alert: SQLInjectionAttempts
+        expr: increase(sql_injection_attempts_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SQL injection attempt detected"
+          description: "Potential SQL injection attack detected."
+
+      - alert: XSSAttempts
+        expr: increase(xss_attempts_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "XSS attempt detected"
+          description: "Potential XSS attack detected."
+
+      - alert: RateLimitExceeded
+        expr: rate(rate_limit_exceeded_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rate limit being exceeded"
+          description: "{{ $value }} rate limit violations per second."

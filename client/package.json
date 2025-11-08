@@ -3,26 +3,27 @@
   "version": "1.0.0",
   "description": "React frontend for the NASA System 7 Portal - Authentic System 7 interface with NASA data visualization",
   "private": true,
+  "type": "module",
   "dependencies": {
+    "@tanstack/react-query": "^5.0.0",
     "axios": "^1.6.0",
     "d3": "^7.8.5",
     "framer-motion": "^10.16.16",
+    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@tanstack/react-query": "^5.0.0",
-    "react-router-dom": "^6.20.1",
-    "web-vitals": "^2.1.4",
-    "lodash": "^4.17.21",
     "react-intersection-observer": "^9.5.3",
+    "react-router-dom": "^6.20.1",
+    "react-virtualized-auto-sizer": "^1.0.20",
     "react-window": "^1.8.8",
-    "react-virtualized-auto-sizer": "^1.0.20"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite",
-    "test": "vitest",
+    "test": "vitest --config vitest.config.mjs",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:ci": "vitest --coverage --watch=false --run",
@@ -55,6 +56,8 @@
     ]
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
     "@cypress/react": "^9.0.1",
     "@cypress/vite-dev-server": "^5.0.0",
     "@testing-library/jest-dom": "^5.17.0",

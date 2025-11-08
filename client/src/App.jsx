@@ -1,10 +1,10 @@
 import React, { Suspense, lazy } from 'react';
-import { useBundleMonitor } from './hooks/usePerformanceOptimized';
+import { useBundleMonitor } from './hooks/usePerformanceOptimized.js';
 import BundleAnalyzer from './components/Performance/BundleAnalyzer';
 
 // Lazy load heavy components
-const Desktop = lazy(() => import('./components/system7/Desktop'));
-const MenuBar = lazy(() => import('./components/system7/MenuBar'));
+const Desktop = lazy(() => import('./components/system7/Desktop.jsx'));
+const MenuBar = lazy(() => import('./components/system7/MenuBar.jsx'));
 
 // Loading fallback component
 const LoadingFallback = () => (

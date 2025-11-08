@@ -1,0 +1,61 @@
+# NASA System 7 Portal - Client Development Dockerfile
+# Optimized for development with hot reload and debugging
+
+# Base image with Node.js
+FROM node:18-alpine
+LABEL maintainer="NASA System 7 Portal Team" \
+      version="1.0.0" \
+      description="NASA System 7 Portal Frontend - Development Environment"
+
+# Set working directory
+WORKDIR /app
+
+# Environment variables for development
+ENV NODE_ENV=development \
+    PORT=3000 \
+    CHOKIDAR_USEPOLLING=true \
+    FAST_REFRESH=true \
+    WATCHPACK_POLLING=true \
+    NPM_CONFIG_LOGLEVEL=warn
+
+# Install system dependencies
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+        curl \
+        bash \
+        git \
+        python3 \
+        make \
+        g++ \
+        libc6-compat \
+        && ln -sf python3 /usr/bin/python \
+    && rm -rf /var/cache/apk/* \
+    && rm -rf /tmp/*
+
+# Create non-root user for development
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci && \
+    npm cache clean --force
+
+# Change ownership of node_modules to non-root user
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000 || exit 1
+
+# Expose port
+EXPOSE 3000
+
+# Start development server
+CMD ["npm", "run", "dev"]

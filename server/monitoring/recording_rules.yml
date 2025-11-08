@@ -1,0 +1,132 @@
+groups:
+  - name: application.rules
+    interval: 30s
+    rules:
+      # Request rate calculations
+      - record: instance:http_requests:rate_5m
+        expr: rate(http_requests_total[5m])
+
+      - record: instance:http_requests:rate_1h
+        expr: rate(http_requests_total[1h])
+
+      # Error rate calculations
+      - record: instance:http_requests_5xx:rate_5m
+        expr: rate(http_requests_total{status=~"5.."}[5m])
+
+      - record: instance:http_requests_4xx:rate_5m
+        expr: rate(http_requests_total{status=~"4.."}[5m])
+
+      # Response time calculations
+      - record: instance:http_request_duration_seconds:p50:rate5m
+        expr: histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: instance:http_request_duration_seconds:p95:rate5m
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: instance:http_request_duration_seconds:p99:rate5m
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+
+  - name: nasa-api.rules
+    interval: 30s
+    rules:
+      # NASA API request rates
+      - record: nasa_api_requests:rate_5m
+        expr: rate(nasa_api_requests_total[5m])
+
+      - record: nasa_api_requests_success:rate_5m
+        expr: rate(nasa_api_requests_total{status="success"}[5m])
+
+      - record: nasa_api_requests_error:rate_5m
+        expr: rate(nasa_api_requests_total{status="error"}[5m])
+
+      # NASA API response times
+      - record: nasa_api_response_time:p50:rate5m
+        expr: histogram_quantile(0.50, rate(nasa_api_request_duration_seconds_bucket[5m]))
+
+      - record: nasa_api_response_time:p95:rate5m
+        expr: histogram_quantile(0.95, rate(nasa_api_request_duration_seconds_bucket[5m]))
+
+      # Cache effectiveness
+      - record: nasa_api_cache_hit_rate:5m
+        expr: rate(nasa_api_cache_hits_total[5m]) / (rate(nasa_api_cache_hits_total[5m]) + rate(nasa_api_cache_misses_total[5m]))
+
+  - name: database.rules
+    interval: 30s
+    rules:
+      # PostgreSQL performance metrics
+      - record: postgres_connections:percentage
+        expr: (pg_stat_activity_count / pg_settings_max_connections) * 100
+
+      - record: postgres_database_size:bytes
+        expr: pg_database_size_bytes
+
+      - record: postgres_transactions_per_second:5m
+        expr: rate(pg_stat_database_xact_commit_total[5m]) + rate(pg_stat_database_xact_rollback_total[5m])
+
+      - record: postgres_query_duration:p95:rate5m
+        expr: histogram_quantile(0.95, rate(pg_stat_statements_mean_time_seconds_bucket[5m]))
+
+  - name: redis.rules
+    interval: 30s
+    rules:
+      # Redis performance metrics
+      - record: redis_memory_usage:percentage
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100
+
+      - record: redis_connections:active
+        expr: redis_connected_clients
+
+      - record: redis_operations_per_second:5m
+        expr: rate(redis_commands_processed_total[5m])
+
+      - record: redis_cache_hit_rate:5m
+        expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)
+
+      - record: redis_keys_expired_rate:5m
+        expr: rate(redis_expired_keys_total[5m])
+
+  - name: infrastructure.rules
+    interval: 30s
+    rules:
+      # System resource usage
+      - record: node_cpu_usage:percentage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+      - record: node_memory_usage:percentage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+      - record: node_disk_usage:percentage
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100
+
+      # Network I/O
+      - record: node_network_receive:bytes_per_second
+        expr: rate(node_network_receive_bytes_total[5m])
+
+      - record: node_network_transmit:bytes_per_second
+        expr: rate(node_network_transmit_bytes_total[5m])
+
+      # Disk I/O
+      - record: node_disk_read:bytes_per_second
+        expr: rate(node_disk_read_bytes_total[5m])
+
+      - record: node_disk_write:bytes_per_second
+        expr: rate(node_disk_written_bytes_total[5m])
+
+  - name: business.rules
+    interval: 60s
+    rules:
+      # Business metrics
+      - record: active_users:5m
+        expr: count(count by (user_id) (user_sessions_total))
+
+      - record: page_views:rate_5m
+        expr: rate(page_views_total[5m])
+
+      - record: user_sessions:active
+        expr: count(increase(user_sessions_total[5m]) > 0)
+
+      - record: api_requests_per_user:rate_5m
+        expr: rate(http_requests_total[5m]) / count(count by (user_id) (user_sessions_total))
+
+      - record: error_rate:percentage
+        expr: (rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])) * 100

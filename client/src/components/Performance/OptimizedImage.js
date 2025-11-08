@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useLazyImage } from '../../hooks/usePerformanceOptimized';
+import { useLazyImage } from '../../hooks/usePerformanceOptimized.js';
 
 const OptimizedImage = ({
   src,

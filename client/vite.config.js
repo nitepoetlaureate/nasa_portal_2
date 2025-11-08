@@ -56,24 +56,12 @@ export default defineConfig({
     },
   },
 
-  // CSS configuration
+  // CSS configuration - PostCSS is handled by external postcss.config.cjs
   css: {
-    postcss: {
-      plugins: [
-        require('tailwindcss'),
-        require('autoprefixer'),
-      ],
-    },
+    postcss: './postcss.config.cjs',
   },
 
   // Environment variables prefix
   envPrefix: 'REACT_APP_',
 
-  // Test configuration
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.js'],
-    css: true,
-  },
-})
+  })

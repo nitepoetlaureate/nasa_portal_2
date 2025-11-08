@@ -16,6 +16,11 @@
     "performance:test": "node scripts/performanceTest.js",
     "performance:load": "node scripts/performanceTest.js load",
     "monitor": "node scripts/performanceMonitor.js",
+    "cache:test": "node scripts/cacheTest.js",
+    "cache:stats": "node scripts/cacheManager.js --stats",
+    "cache:monitor": "node scripts/cacheMonitor.js",
+    "cache:clear": "node scripts/cacheManager.js --clear-all",
+    "cache:list": "node scripts/cacheManager.js --list",
     "test:ci": "jest --coverage --watchAll=false --ci",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --runInBand --testPathPattern=.*integration.test.js",
@@ -45,7 +50,9 @@
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
     "pg-pool": "^3.6.1",
-    "redis": "^4.6.10"
+    "prom-client": "^14.2.0",
+    "redis": "^4.6.10",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "eslint": "^8.54.0",

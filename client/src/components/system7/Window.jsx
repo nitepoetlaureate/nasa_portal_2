@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useApps } from '../../contexts/AppContext';
 import { usePerformanceMonitor } from '../../hooks/usePerformanceOptimized';
 
-const Window = ({ children, title, appId, initialPos }) => {
+const Window = ({ children, title, appId, initialPos, 'data-testid': testId }) => {
     const { apps, closeApp, bringToFront, updateAppPosition } = useApps();
     const constraintsRef = useRef(null);
     const appState = apps[appId];
@@ -38,6 +38,7 @@ const Window = ({ children, title, appId, initialPos }) => {
         <AnimatePresence>
             <motion.div
                 key={appId}
+                data-testid={testId}
                 drag
                 dragMomentum={false}
                 dragConstraints={constraintsRef}

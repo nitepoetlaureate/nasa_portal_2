@@ -1,0 +1,443 @@
+# NASA System 7 Portal - Optimized Production Docker Compose Configuration
+# High-performance, security-hardened deployment with advanced monitoring
+
+version: '3.8'
+
+services:
+  # ===== PostgreSQL Database (Production-Optimized) =====
+  postgres:
+    image: postgres:15-alpine
+    container_name: nasa_system7_db_opt
+    environment:
+      POSTGRES_DB: ${DB_NAME:-nasa_system7}
+      POSTGRES_USER: ${DB_USER:-nasa_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_opt_data:/var/lib/postgresql/data
+      - ./server/scripts/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./server/scripts/prod-seed.sql:/docker-entrypoint-initdb.d/02-prod-seed.sql:ro
+      - postgres_backups:/backups
+    networks:
+      - nasa_opt_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-nasa_user} -d ${DB_NAME:-nasa_system7}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+
+  # ===== Redis Cache (Production-Optimized) =====
+  redis:
+    image: redis:7-alpine
+    container_name: nasa_system7_redis_opt
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --tcp-keepalive 300
+      --timeout 0
+    volumes:
+      - redis_opt_data:/data
+      - redis_backups:/backups
+    networks:
+      - nasa_opt_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp
+
+  # ===== Backend API (Production-Optimized) =====
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: production
+      cache_from:
+        - nasa-system7-server:latest
+      args:
+        - NODE_ENV=production
+    image: nasa-system7-server:latest
+    container_name: nasa_system7_server_opt
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-nasa_system7}
+      DB_USER: ${DB_USER:-nasa_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      NASA_API_KEY: ${NASA_API_KEY}
+      JPL_API_KEY: ${JPL_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ENABLE_CORS: "false"
+      ENABLE_SWAGGER: "false"
+      ENABLE_METRICS: "true"
+      TRUST_PROXY: "true"
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+    volumes:
+      - server_opt_logs:/app/logs
+      - server_uploads:/app/uploads
+      - server_tmp:/app/tmp
+    networks:
+      - nasa_opt_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /app/tmp
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # ===== Frontend Application (Production-Optimized) =====
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: production
+      cache_from:
+        - nasa-system7-client:latest
+      args:
+        - NODE_ENV=production
+    image: nasa-system7-client:latest
+    container_name: nasa_system7_client_opt
+    environment:
+      NODE_ENV: production
+      REACT_APP_API_URL: https://${DOMAIN:-api.nasa-system7.example.com}
+      REACT_APP_ENVIRONMENT: production
+      NGINX_WORKER_PROCESSES: "auto"
+      NGINX_WORKER_CONNECTIONS: "2048"
+    volumes:
+      - client_opt_logs:/var/log/nginx
+      - nginx_cache:/var/cache/nginx
+      - nginx_tmp:/tmp/nginx
+    networks:
+      - nasa_opt_network
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+        monitor: 30s
+        max_failure_ratio: 0.3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp/nginx
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # ===== High-Performance Load Balancer =====
+  nginx-lb:
+    image: nginx:1.25-alpine
+    container_name: nasa_system7_nginx_lb_opt
+    volumes:
+      - ./nginx/nginx-lb.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/mime.types:/etc/nginx/mime.types:ro
+      - nginx_lb_logs:/var/log/nginx
+      - nginx_lb_cache:/var/cache/nginx
+      - ssl_certs:/etc/ssl/certs:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - nasa_opt_network
+    depends_on:
+      - client
+      - server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # ===== Enhanced Monitoring Stack =====
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: nasa_system7_prometheus_opt
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--alertmanager.notification-queue-capacity=10000'
+      - '--query.max-concurrency=20'
+      - '--query.timeout=2m'
+    volumes:
+      - ./monitoring/prometheus.optimized.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - prometheus_opt_data:/prometheus
+    networks:
+      - nasa_opt_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /prometheus_tmp
+
+# ===== Networks =====
+networks:
+  nasa_opt_network:
+    driver: bridge
+    name: nasa_opt_network
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+          gateway: 172.19.0.1
+    driver_opts:
+      com.docker.network.bridge.name: nasa_opt_br
+      com.docker.network.driver.mtu: 1500
+
+# ===== Volumes =====
+volumes:
+  postgres_opt_data:
+    driver: local
+    name: nasa_system7_postgres_opt_data
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/nasa_system7/data/postgres
+  redis_opt_data:
+    driver: local
+    name: nasa_system7_redis_opt_data
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/nasa_system7/data/redis
+  prometheus_opt_data:
+    driver: local
+    name: nasa_system7_prometheus_opt_data
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/nasa_system7/data/prometheus
+  server_opt_logs:
+    driver: local
+    name: nasa_system7_server_opt_logs
+  client_opt_logs:
+    driver: local
+    name: nasa_system7_client_opt_logs
+  nginx_lb_logs:
+    driver: local
+    name: nasa_system7_nginx_lb_logs
+  nginx_cache:
+    driver: local
+    name: nasa_system7_nginx_cache
+  nginx_lb_cache:
+    driver: local
+    name: nasa_system7_nginx_lb_cache
+  server_uploads:
+    driver: local
+    name: nasa_system7_server_uploads
+  server_tmp:
+    driver: tmpfs
+  nginx_tmp:
+    driver: tmpfs
+  ssl_certs:
+    driver: local
+    name: nasa_system7_ssl_certs
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/nasa_system7/ssl/certs
+  postgres_backups:
+    driver: local
+    name: nasa_system7_postgres_backups
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/nasa_system7/backups/postgres
+  redis_backups:
+    driver: local
+    name: nasa_system7_redis_backups
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/nasa_system7/backups/redis

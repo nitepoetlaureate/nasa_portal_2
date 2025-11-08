@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useOptimizedApi } from '../../hooks/usePerformanceOptimized';
-import { getApod, getApodForDate } from '../../services/api';
-import { useApps } from '../../contexts/AppContext';
-import OptimizedImage from '../Performance/OptimizedImage';
+import { useOptimizedApi } from '../../hooks/usePerformanceOptimized.js';
+import { getApod, getApodForDate } from '../../services/api.js';
+import { useApps } from '../../contexts/AppContext.jsx';
+import OptimizedImage from '../Performance/OptimizedImage.js';
 
 // Helper component
 const DetailRow = ({ label, value }) => (
