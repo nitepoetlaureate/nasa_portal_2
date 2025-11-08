@@ -1,0 +1,545 @@
+{
+  "summary": {
+    "totalTests": 21,
+    "passed": 0,
+    "failed": 21,
+    "skipped": 0,
+    "startTime": "2025-11-08T13:38:54.349Z",
+    "endTime": "2025-11-08T13:38:56.227Z",
+    "duration": -1762609134349
+  },
+  "categories": {
+    "apod": {
+      "name": "APOD API",
+      "tests": [
+        {
+          "name": "APOD - Today",
+          "category": "apod",
+          "description": "Get today's Astronomy Picture of the Day",
+          "status": "failed",
+          "responseTime": 502,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:54.350Z"
+        },
+        {
+          "name": "APOD - Specific Date",
+          "category": "apod",
+          "description": "Get APOD for a specific date",
+          "status": "failed",
+          "responseTime": 119,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:54.852Z"
+        },
+        {
+          "name": "APOD - Date Range",
+          "category": "apod",
+          "description": "Get APOD for a date range",
+          "status": "failed",
+          "responseTime": 100,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:54.971Z"
+        }
+      ]
+    },
+    "neo": {
+      "name": "Near-Earth Objects API",
+      "tests": [
+        {
+          "name": "NeoWs - Feed This Week",
+          "category": "neo",
+          "description": "Get NEO feed for the current week",
+          "status": "failed",
+          "responseTime": 186,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.072Z"
+        },
+        {
+          "name": "NeoWs - Browse",
+          "category": "neo",
+          "description": "Browse NEOs",
+          "status": "failed",
+          "responseTime": 98,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.258Z"
+        }
+      ]
+    },
+    "mars": {
+      "name": "Mars Rover Photos API",
+      "tests": [
+        {
+          "name": "Mars Rover - Curiosity Latest Photos",
+          "category": "mars",
+          "description": "Get latest photos from Curiosity rover",
+          "status": "failed",
+          "responseTime": 103,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.356Z"
+        },
+        {
+          "name": "Mars Rover - Curiosity Photos by Sol",
+          "category": "mars",
+          "description": "Get Curiosity photos for specific sol",
+          "status": "failed",
+          "responseTime": 101,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.460Z"
+        },
+        {
+          "name": "Mars Rover - All Rovers",
+          "category": "mars",
+          "description": "Get information about all Mars rovers",
+          "status": "failed",
+          "responseTime": 99,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.561Z"
+        }
+      ]
+    },
+    "epic": {
+      "name": "EPIC Earth Imagery API",
+      "tests": [
+        {
+          "name": "EPIC - Recent Natural Images",
+          "category": "epic",
+          "description": "Get recent natural color Earth images",
+          "status": "failed",
+          "responseTime": 123,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.660Z"
+        },
+        {
+          "name": "EPIC - Recent Enhanced Images",
+          "category": "epic",
+          "description": "Get recent enhanced Earth images",
+          "status": "failed",
+          "responseTime": 109,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.783Z"
+        }
+      ]
+    },
+    "donki": {
+      "name": "Space Weather (DONKI) API",
+      "tests": [
+        {
+          "name": "DONKI - Coronal Mass Ejection",
+          "category": "donki",
+          "description": "Get Coronal Mass Ejection data",
+          "status": "failed",
+          "responseTime": 101,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.893Z"
+        },
+        {
+          "name": "DONKI - Geomagnetic Storms",
+          "category": "donki",
+          "description": "Get geomagnetic storm data",
+          "status": "failed",
+          "responseTime": 103,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:55.994Z"
+        },
+        {
+          "name": "DONKI - Solar Flares",
+          "category": "donki",
+          "description": "Get solar flare data",
+          "status": "failed",
+          "responseTime": 103,
+          "cacheStatus": "N/A",
+          "error": "Request failed with status code 429",
+          "details": {
+            "status": 429,
+            "errorDetails": {
+              "error": {
+                "code": "OVER_RATE_LIMIT",
+                "message": "You have exceeded your rate limit. Try again later or contact us at https://api.nasa.gov:443/contact/ for assistance"
+              }
+            }
+          },
+          "timestamp": "2025-11-08T13:38:56.097Z"
+        }
+      ]
+    },
+    "enhanced": {
+      "name": "Enhanced API Endpoints",
+      "tests": [
+        {
+          "name": "Enhanced APOD - Today",
+          "category": "enhanced",
+          "description": "Test enhanced APOD endpoint",
+          "status": "failed",
+          "responseTime": 1,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.223Z"
+        },
+        {
+          "name": "Enhanced NEO - Statistics",
+          "category": "enhanced",
+          "description": "Test enhanced NEO statistics endpoint",
+          "status": "failed",
+          "responseTime": 2,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.224Z"
+        },
+        {
+          "name": "Enhanced NEO - Close Approaches",
+          "category": "enhanced",
+          "description": "Test enhanced close approaches endpoint",
+          "status": "failed",
+          "responseTime": 1,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.226Z"
+        }
+      ]
+    },
+    "proxy": {
+      "name": "NASA API Proxy",
+      "tests": [
+        {
+          "name": "Proxy Health Check",
+          "category": "proxy",
+          "description": "Test server health endpoint",
+          "status": "failed",
+          "responseTime": 12,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.201Z"
+        },
+        {
+          "name": "Proxy - APOD",
+          "category": "proxy",
+          "description": "Test APOD proxy endpoint",
+          "status": "failed",
+          "responseTime": 3,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.213Z"
+        },
+        {
+          "name": "Proxy - NEO Feed",
+          "category": "proxy",
+          "description": "Test NEO feed proxy endpoint",
+          "status": "failed",
+          "responseTime": 2,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.216Z"
+        },
+        {
+          "name": "Proxy - Mars Rover",
+          "category": "proxy",
+          "description": "Test Mars Rover proxy endpoint",
+          "status": "failed",
+          "responseTime": 2,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.218Z"
+        },
+        {
+          "name": "Proxy - EPIC",
+          "category": "proxy",
+          "description": "Test EPIC proxy endpoint",
+          "status": "failed",
+          "responseTime": 1,
+          "cacheStatus": "N/A",
+          "error": "Cannot read properties of undefined (reading 'x-cache')",
+          "details": {},
+          "timestamp": "2025-11-08T13:38:56.221Z"
+        }
+      ]
+    }
+  },
+  "performance": {
+    "fastestEndpoint": 1,
+    "slowestEndpoint": 502,
+    "averageResponseTime": 89,
+    "cacheHitRate": 0
+  },
+  "errors": [],
+  "recommendations": [
+    {
+      "type": "performance",
+      "severity": "low",
+      "title": "Low Cache Hit Rate",
+      "description": "Cache hit rate is 0%. Review caching strategy."
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: APOD - Today",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "APOD API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: APOD - Specific Date",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "APOD API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: APOD - Date Range",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "APOD API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: NeoWs - Feed This Week",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Near-Earth Objects API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: NeoWs - Browse",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Near-Earth Objects API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Mars Rover - Curiosity Latest Photos",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Mars Rover Photos API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Mars Rover - Curiosity Photos by Sol",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Mars Rover Photos API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Mars Rover - All Rovers",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Mars Rover Photos API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: EPIC - Recent Natural Images",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "EPIC Earth Imagery API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: EPIC - Recent Enhanced Images",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "EPIC Earth Imagery API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: DONKI - Coronal Mass Ejection",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Space Weather (DONKI) API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: DONKI - Geomagnetic Storms",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Space Weather (DONKI) API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: DONKI - Solar Flares",
+      "description": "Test failed with error: Request failed with status code 429",
+      "category": "Space Weather (DONKI) API"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Enhanced APOD - Today",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "Enhanced API Endpoints"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Enhanced NEO - Statistics",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "Enhanced API Endpoints"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Enhanced NEO - Close Approaches",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "Enhanced API Endpoints"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Proxy Health Check",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "NASA API Proxy"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Proxy - APOD",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "NASA API Proxy"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Proxy - NEO Feed",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "NASA API Proxy"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Proxy - Mars Rover",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "NASA API Proxy"
+    },
+    {
+      "type": "error",
+      "severity": "high",
+      "title": "Failed Test: Proxy - EPIC",
+      "description": "Test failed with error: Cannot read properties of undefined (reading 'x-cache')",
+      "category": "NASA API Proxy"
+    }
+  ]
+}
