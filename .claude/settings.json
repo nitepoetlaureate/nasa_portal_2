@@ -1,0 +1,159 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Bash(npm:*)",
+      "Bash(yarn:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(git:*)",
+      "Bash(eslint:*)",
+      "Bash(prettier:*)",
+      "Bash(tsc:*)",
+      "Bash(jest:*)",
+      "Bash(vitest:*)",
+      "Bash(webpack:*)",
+      "Bash(vite:*)",
+      "Bash(psql:*)",
+      "Bash(redis-cli:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(concurrently:*)",
+      "Bash(nodemon:*)",
+      "Bash(cypress:*)",
+      "Bash(react-scripts:*)",
+      "Bash(morgan:*)",
+      "Bash(helmet:*)",
+      "Bash(compression:*)",
+      "Bash(cors:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(rm -rf:*)"
+    ],
+    "defaultMode": "allowEdits"
+  },
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "60000",
+    "BASH_MAX_OUTPUT_LENGTH": "20000",
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+    "NODE_ENV": "development",
+    "NASA_API_KEY": "${NASA_API_KEY}",
+    "DATABASE_URL": "${DATABASE_URL}",
+    "REDIS_URL": "${REDIS_URL}",
+    "SERVER_PORT": "3001",
+    "CLIENT_PORT": "3000"
+  },
+  "includeCoAuthoredBy": true,
+  "cleanupPeriodDays": 30,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p ~/.claude && echo \"$(date '+%Y-%m-%d %H:%M:%S') - $(echo '$STDIN_JSON' | jq -r '.tool_input.command // \"unknown\"') - $(echo '$STDIN_JSON' | jq -r '.tool_input.description // \"No description\"')\" >> ~/.claude/bash-command-log.txt"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo '$STDIN_JSON' | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.(js|jsx|ts|tsx)$ ]]; then if echo '$STDIN_JSON' | jq -r '.tool_input.content // \"\"' | grep -q 'console\\.log'; then echo '⚠️  Warning: console.log statements should be removed before committing in: $FILE' >&2; fi; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo '$STDIN_JSON' | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" == \"package.json\" ]] && [[ \"$SKIP_AUDIT\" != \"true\" ]]; then echo '🔍 Checking for vulnerable dependencies...'; npm audit --audit-level=moderate --json > /tmp/npm-audit.json 2>/dev/null || echo 'Audit completed with warnings'; elif [[ \"$FILE\" == \"server/package.json\" ]] && [[ \"$SKIP_AUDIT\" != \"true\" ]]; then echo '🔍 Checking server dependencies...'; cd server && npm audit --audit-level=moderate --json > /tmp/npm-audit-server.json 2>/dev/null || echo 'Server audit completed'; elif [[ \"$FILE\" == \"client/package.json\" ]] && [[ \"$SKIP_AUDIT\" != \"true\" ]]; then echo '🔍 Checking client dependencies...'; cd client && npm audit --audit-level=moderate --json > /tmp/npm-audit-client.json 2>/dev/null || echo 'Client audit completed'; fi",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.(js|jsx|ts|tsx)$ ]]; then if [[ \"$FILE\" =~ client/ ]]; then cd client && npx prettier --write \"$FILE\"; elif [[ \"$FILE\" =~ server/ ]]; then cd server && npx prettier --write \"$FILE\"; else npx prettier --write \"$FILE\"; fi; fi",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo '$STDIN_JSON' | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.(ts|tsx)$ ]]; then if [[ -f \"$(dirname \"$FILE\")/tsconfig.json\" ]] || [[ -f \"tsconfig.json\" ]]; then npx tsc --noEmit \"$FILE\" 2>/dev/null || echo '⚠️  TypeScript check completed with warnings'; fi; fi",
+            "timeout": 20
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo '$STDIN_JSON' | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.(js|jsx|ts|tsx)$ ]] && [[ -f \"$FILE\" ]]; then if grep -E 'import \\s+\\*\\s+as\\s+[^\\s]+\\s+from' \"$FILE\" >/dev/null 2>&1; then echo '💡 Tip: Consider specific imports instead of wildcard imports for better tree-shaking in: $FILE' >&2; fi; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo '$STDIN_JSON' | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.(js|jsx|ts|tsx)$ && \"$FILE\" != *\".test.\"* && \"$FILE\" != *\".spec.\"* && \"$AUTO_TEST\" == \"true\" ]]; then DIR=$(dirname \"$FILE\"); BASENAME=$(basename \"$FILE\" | sed -E 's/\\.(js|jsx|ts|tsx)$//'); echo \"🧪 Auto-test mode enabled - checking for test files...\"; for TEST_FILE in \"$DIR/$BASENAME.test.\"* \"$DIR/$BASENAME.spec.\"*; do if [ -f \"$TEST_FILE\" ]; then echo \"Running tests for: $TEST_FILE\"; if [[ \"$FILE\" =~ client/ ]]; then (cd client && npx vitest run \"$TEST_FILE\" 2>/dev/null || echo 'Tests completed'); elif [[ \"$FILE\" =~ server/ ]]; then (cd server && npm test \"$TEST_FILE\" 2>/dev/null || echo 'Tests completed'); fi; break; fi; done; fi",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p ~/.claude && echo \"Claude Code notification: $(date '+%Y-%m-%d %H:%M:%S')\" >> ~/.claude/notifications.log"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Running linter on changed files...'; if [[ -f client/package.json ]]; then cd client && npx eslint $(git diff --name-only --diff-filter=ACMR client/src | grep -E '\\.js$|\\.jsx$|\\.ts$|\\.tsx$' || true); fi; if [[ -f server/package.json ]]; then cd server && npx eslint $(git diff --name-only --diff-filter=ACMR server | grep -E '\\.js$|\\.jsx$|\\.ts$|\\.tsx$' || true); fi; npx eslint $(git diff --name-only --diff-filter=ACMR | grep -E '\\.js$|\\.jsx$|\\.ts$|\\.tsx$' | grep -v -E '^(client/|server/)' || true)",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Analyzing bundle size impact...'; if [[ -f client/package.json ]]; then cd client && if npm run analyze >/dev/null 2>&1; then npm run analyze; else echo 'Bundle analysis: npm run analyze'; fi; fi; if [[ -f server/package.json ]]; then echo 'Server bundle analysis not applicable (Node.js)'; fi",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

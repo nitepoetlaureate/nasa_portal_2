@@ -28,6 +28,7 @@
     "url": "https://github.com/your-username/nasa-system7-portal.git"
   },
   "dependencies": {
+    "claude-code-templates": "^1.27.0",
     "draggabilly": "^3.0.0"
   },
   "devDependencies": {

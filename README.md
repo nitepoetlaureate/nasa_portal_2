@@ -31,22 +31,28 @@ A nostalgic web application that brings NASA's vast collection of space data to 
 
 ### Technology Stack
 
-#### Frontend (React)
+#### Frontend (React with Vite)
 ```
 React 18.2+          # Modern UI framework with hooks
+Vite 5.0+             # Fast build tool and development server
+@tanstack/react-query # Server state management and caching
 Framer Motion         # Smooth animations and gestures
 Tailwind CSS          # Utility-first styling
 Axios                 # HTTP client for API calls
 D3.js                 # Data visualization
+Vitest                # Unit testing framework
 ```
 
 #### Backend (Node.js)
 ```
 Express.js            # Web framework and API server
 Axios                 # NASA/JPL API integration
-PostgreSQL (pg)       # Database connection
+PostgreSQL (pg)       # Database connection with connection pooling
+Redis                 # Caching and session storage
 CORS                  # Cross-origin resource sharing
+Helmet                # Security middleware
 dotenv               # Environment management
+Jest                  # Server-side testing
 ```
 
 #### Database
@@ -142,14 +148,18 @@ DB_PORT=5432
 
 ### 4. Install Dependencies
 
-#### Backend Dependencies
+#### Quick Install (All Dependencies)
 ```bash
-cd server
-npm install
+npm run install-all
 ```
 
-#### Frontend Dependencies
+#### Individual Installation
 ```bash
+# Backend Dependencies
+cd server
+npm install
+
+# Frontend Dependencies
 cd ../client
 npm install
 ```

@@ -23,7 +23,7 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https://api.nasa.gov", "https://images.nasa.gov"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      connectSrc: ["'self'", "https.api.nasa.gov"] // Corrected to allow https
+      connectSrc: ["'self'", "https://api.nasa.gov"] // Fixed NASA API URL
     }
   }
 }));

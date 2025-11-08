@@ -1,0 +1,24 @@
+{
+  "name": "nasa-system7-portal-e2e",
+  "version": "1.0.0",
+  "description": "E2E tests for NASA System 7 Portal using Cypress",
+  "scripts": {
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "test:e2e:headed": "cypress run --headed",
+    "test:e2e:chrome": "cypress run --browser chrome",
+    "test:e2e:firefox": "cypress run --browser firefox"
+  },
+  "devDependencies": {
+    "cypress": "^13.6.1"
+  },
+  "keywords": [
+    "e2e",
+    "testing",
+    "cypress",
+    "nasa",
+    "system7"
+  ],
+  "author": "NASA System 7 Portal Team",
+  "license": "MIT"
+}

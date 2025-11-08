@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-claude-config:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
