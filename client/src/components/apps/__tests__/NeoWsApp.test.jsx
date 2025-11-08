@@ -11,11 +11,13 @@ vi.mock('../../../services/api', () => ({
   getNeoDetails: vi.fn(),
 }));
 
-// Mock useApi hook
-const mockUseApi = vi.fn();
+// Mock useApi hook - fix hoisting issue
 vi.mock('../../../hooks/useApi.js', () => ({
-  default: mockUseApi,
+  default: vi.fn(),
 }));
+
+// Import the mocked hooks for use in tests
+import useApi from '../../../hooks/useApi.js';
 
 // Mock useSound hook
 const mockPlaySelectSound = vi.fn();
@@ -98,7 +100,7 @@ const mockNeoDetails = {
 describe('NeoWs App Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseApi.mockClear();
+    useApi.mockClear();
     mockPlaySelectSound.mockClear();
     mockPlayHazardSound.mockClear();
     mockPlaySafeSound.mockClear();
@@ -113,7 +115,7 @@ describe('NeoWs App Component', () => {
 
   describe('Loading State', () => {
     it('should render loading state correctly', () => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: null,
         loading: true,
         error: null,
@@ -126,7 +128,7 @@ describe('NeoWs App Component', () => {
     });
 
     it('should show loading message with proper styling', () => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: null,
         loading: true,
         error: null,
@@ -141,7 +143,7 @@ describe('NeoWs App Component', () => {
 
   describe('Error State', () => {
     it('should render error state correctly', () => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: null,
         loading: false,
         error: new Error('Failed to fetch NEO data'),
@@ -153,7 +155,7 @@ describe('NeoWs App Component', () => {
     });
 
     it('should apply error styling correctly', () => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: null,
         loading: false,
         error: new Error('Network error'),
@@ -168,7 +170,7 @@ describe('NeoWs App Component', () => {
 
   describe('NEO List Display', () => {
     beforeEach(() => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: mockNeoFeedData,
         loading: false,
         error: null,
@@ -239,7 +241,7 @@ describe('NeoWs App Component', () => {
 
   describe('NEO Detail Display', () => {
     beforeEach(() => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: mockNeoFeedData,
         loading: false,
         error: null,
@@ -311,7 +313,7 @@ describe('NeoWs App Component', () => {
 
   describe('Sound Effects Integration', () => {
     beforeEach(() => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: mockNeoFeedData,
         loading: false,
         error: null,
@@ -326,13 +328,13 @@ describe('NeoWs App Component', () => {
       await user.click(firstNeo);
 
       // Sound effects should be triggered through the useSound hook
-      expect(mockUseApi).toHaveBeenCalled();
+      expect(useApi).toHaveBeenCalled();
     });
   });
 
   describe('Component Layout and Styling', () => {
     beforeEach(() => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: mockNeoFeedData,
         loading: false,
         error: null,
@@ -400,7 +402,7 @@ describe('NeoWs App Component', () => {
         },
       };
 
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: emptyFeedData,
         loading: false,
         error: null,
@@ -429,7 +431,7 @@ describe('NeoWs App Component', () => {
         },
       };
 
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: feedWithIncompleteData,
         loading: false,
         error: null,
@@ -442,7 +444,7 @@ describe('NeoWs App Component', () => {
     });
 
     it('should handle today\'s date correctly', () => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: mockNeoFeedData,
         loading: false,
         error: null,
@@ -460,7 +462,7 @@ describe('NeoWs App Component', () => {
       // Mock console.error to verify it's called
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: mockNeoFeedData,
         loading: false,
         error: null,
@@ -487,7 +489,7 @@ describe('NeoWs App Component', () => {
 
   describe('Accessibility', () => {
     beforeEach(() => {
-      mockUseApi.mockReturnValue({
+      useApi.mockReturnValue({
         data: mockNeoFeedData,
         loading: false,
         error: null,

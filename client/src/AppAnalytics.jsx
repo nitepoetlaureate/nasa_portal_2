@@ -1,8 +1,10 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useBundleMonitor } from './hooks/usePerformanceOptimized.js';
 import { useMediaQuery } from './hooks/useMediaQuery.js';
 import BundleAnalyzer from './components/Performance/BundleAnalyzer';
-import MobilePerformanceMonitor from './components/Performance/MobilePerformanceMonitor.jsx';
+import analyticsClient from './services/analyticsClient';
+import ConsentManager from './components/analytics/ConsentManager';
+import { PerformanceMetrics } from './components/analytics/PerformanceMonitor';
 
 // Lazy load heavy components
 const Desktop = lazy(() => import('./components/system7/Desktop.jsx'));
@@ -30,13 +32,55 @@ const LoadingFallback = () => {
   );
 };
 
-function App() {
+function AppAnalytics() {
   // Monitor bundle performance
   useBundleMonitor();
 
   // Responsive design detection
   const isMobile = useMediaQuery('(max-width: 768px)');
   const isTablet = useMediaQuery('(max-width: 1024px)');
+
+  // Analytics state
+  const [showConsentBanner, setShowConsentBanner] = useState(false);
+  const [analyticsReady, setAnalyticsReady] = useState(false);
+
+  // Initialize analytics and check consent
+  useEffect(() => {
+    const initAnalytics = async () => {
+      try {
+        // Initialize analytics client
+        if (!analyticsClient.isInitialized) {
+          await analyticsClient.init();
+        }
+
+        const consentStatus = analyticsClient.getConsentStatus();
+
+        // Show consent banner if no consent has been given
+        if (!consentStatus.hasAnyConsent) {
+          setShowConsentBanner(true);
+        }
+
+        setAnalyticsReady(true);
+
+        // Track app initialization
+        analyticsClient.trackEvent('application', 'essential', 'app_loaded', {
+          label: 'NASA System 7 Portal',
+          value: 1,
+          metadata: {
+            userAgent: navigator.userAgent,
+            viewport: `${window.innerWidth}x${window.innerHeight}`,
+            deviceType: isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop'
+          }
+        });
+
+      } catch (error) {
+        console.error('Analytics initialization failed:', error);
+        setAnalyticsReady(true); // Continue without analytics
+      }
+    };
+
+    initAnalytics();
+  }, [isMobile, isTablet]);
 
   // Register service worker for PWA capabilities
   useEffect(() => {
@@ -78,16 +122,22 @@ function App() {
 
       // Store prompt for later use
       window.pwaInstallPrompt = deferredPrompt;
+
+      // Track PWA install prompt for analytics
+      if (analyticsReady && analyticsClient.hasConsent('functional')) {
+        analyticsClient.trackEvent('pwa', 'functional', 'install_prompt_shown');
+      }
     });
 
     // Handle app installed event
     window.addEventListener('appinstalled', () => {
       console.log('[App] PWA was installed');
+
       // Track installation for analytics
-      if (window.gtag) {
-        gtag('event', 'pwa_installed', {
-          event_category: 'PWA',
-          event_label: 'NASA System 7 Portal'
+      if (analyticsReady && analyticsClient.hasConsent('functional')) {
+        analyticsClient.trackEvent('pwa', 'functional', 'pwa_installed', {
+          label: 'NASA System 7 Portal',
+          value: 1
         });
       }
     });
@@ -97,6 +147,11 @@ function App() {
       const isOnline = navigator.onLine;
       document.body.classList.toggle('offline', !isOnline);
       console.log('[App] Network status:', isOnline ? 'online' : 'offline');
+
+      // Track network status changes
+      if (analyticsReady && analyticsClient.hasConsent('performance')) {
+        analyticsClient.trackEvent('network', 'performance', isOnline ? 'online' : 'offline');
+      }
     };
 
     window.addEventListener('online', updateNetworkStatus);
@@ -107,7 +162,42 @@ function App() {
       window.removeEventListener('online', updateNetworkStatus);
       window.removeEventListener('offline', updateNetworkStatus);
     };
-  }, []);
+  }, [analyticsReady]);
+
+  // Track page visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (analyticsReady && analyticsClient.hasConsent('performance')) {
+        analyticsClient.trackEvent('page', 'performance',
+          document.visibilityState === 'visible' ? 'page_visible' : 'page_hidden'
+        );
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [analyticsReady]);
+
+  // Track route changes (basic implementation)
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (analyticsReady && analyticsClient.hasConsent('performance')) {
+        analyticsClient.trackPageView();
+      }
+    };
+
+    // Track initial page load
+    if (analyticsReady && analyticsClient.hasConsent('performance')) {
+      handleRouteChange();
+    }
+
+    // Set up route change listeners for SPA navigation
+    window.addEventListener('popstate', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, [analyticsReady]);
 
   // Optimize viewport for mobile devices
   useEffect(() => {
@@ -118,6 +208,10 @@ function App() {
       );
     }
   }, [isMobile]);
+
+  const handleConsentClose = () => {
+    setShowConsentBanner(false);
+  };
 
   return (
     <div
@@ -147,8 +241,16 @@ function App() {
       {/* Development bundle analyzer */}
       {process.env.NODE_ENV === 'development' && <BundleAnalyzer />}
 
-      {/* Mobile performance monitor */}
-      <MobilePerformanceMonitor />
+      {/* Analytics Components */}
+      {analyticsReady && <PerformanceMetrics />}
+
+      {/* Consent Banner */}
+      {showConsentBanner && (
+        <ConsentManager
+          showSettings={false}
+          onClose={handleConsentClose}
+        />
+      )}
 
       {/* Offline indicator */}
       <div
@@ -181,6 +283,11 @@ function App() {
                   window.pwaInstallPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
                       console.log('[App] User accepted PWA install');
+
+                      // Track PWA install acceptance
+                      if (analyticsReady && analyticsClient.hasConsent('functional')) {
+                        analyticsClient.trackEvent('pwa', 'functional', 'install_prompt_accepted');
+                      }
                     }
                     window.pwaInstallPrompt = null;
                   });
@@ -194,6 +301,11 @@ function App() {
               className="bg-transparent border border-white text-white px-4 py-2 rounded font-geneva text-sm"
               onClick={() => {
                 document.getElementById('pwa-install-banner').classList.add('hidden');
+
+                // Track PWA install dismissal
+                if (analyticsReady && analyticsClient.hasConsent('functional')) {
+                  analyticsClient.trackEvent('pwa', 'functional', 'install_prompt_dismissed');
+                }
               }}
             >
               Not now
@@ -205,4 +317,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppAnalytics;

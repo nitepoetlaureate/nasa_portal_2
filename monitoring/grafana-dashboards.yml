@@ -1,0 +1,616 @@
+# Grafana Configuration for NASA System 7 Portal
+# Comprehensive dashboards for monitoring, performance, and business metrics
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: monitoring
+  labels:
+    grafana: "true"
+data:
+  grafana.ini: |
+    [server]
+    root_url = https://grafana.nasa-system7.com
+    serve_from_sub_path = true
+
+    [database]
+    type = postgres
+    host = postgres.grafana.svc.cluster.local:5432
+    name = grafana
+    user = grafana
+    password = ${GRAFANA_DB_PASSWORD}
+
+    [security]
+    admin_user = admin
+    admin_password = ${GRAFANA_ADMIN_PASSWORD}
+    secret_key = ${GRAFANA_SECRET_KEY}
+
+    [auth.proxy]
+    enabled = true
+    header_name = X-WEBAUTH-USER
+    header_property = username
+    auto_sign_up = true
+
+    [smtp]
+    enabled = true
+    host = smtp.sendgrid.net:587
+    user = apikey
+    password = ${SENDGRID_API_KEY}
+    from_address = alerts@nasa-system7.com
+
+    [alerting]
+    enabled = true
+    execute_alerts = true
+
+    [unified_alerting]
+    enabled = true
+
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+      editable: true
+      jsonData:
+        timeInterval: "15s"
+        queryTimeout: "60s"
+        httpMethod: "POST"
+
+    - name: CloudWatch
+      type: cloudwatch
+      access: proxy
+      jsonData:
+        authType: default
+        defaultRegion: us-west-2
+
+    - name: PostgreSQL
+      type: postgres
+      access: proxy
+      url: postgres-exporter:9187
+      database: nasa_system7
+      user: postgres
+      jsonData:
+        sslmode: disable
+
+    - name: Redis
+      type: redis
+      access: proxy
+      url: redis-exporter:9121
+      jsonData:
+        client: sentinel
+
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+
+    - name: 'nasa-system7'
+      orgId: 1
+      folder: 'NASA System 7'
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/nasa-system7
+
+---
+# NASA System 7 Application Dashboard
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nasa-system7-dashboard
+  namespace: monitoring
+  labels:
+    grafana: "dashboard"
+data:
+  nasa-system7-overview.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "NASA System 7 Portal Overview",
+        "tags": ["nasa-system7", "overview"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Request Rate",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total[5m]))",
+                "legendFormat": "Requests/sec"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "reqps",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 50},
+                    {"color": "red", "value": 100}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Error Rate",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+                "legendFormat": "Error Rate"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percentunit",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 0.01},
+                    {"color": "red", "value": 0.05}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Response Time (95th percentile)",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+                "legendFormat": "95th percentile"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "s",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 0.2},
+                    {"color": "red", "value": 0.5}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+          },
+          {
+            "id": 4,
+            "title": "Active Users",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(active_users_total)",
+                "legendFormat": "Active Users"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 1000},
+                    {"color": "red", "value": 5000}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+          },
+          {
+            "id": 5,
+            "title": "Request Rate Over Time",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total[5m])) by (service)",
+                "legendFormat": "{{service}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 6,
+            "title": "Response Time Distribution",
+            "type": "heatmap",
+            "targets": [
+              {
+                "expr": "sum(rate(http_request_duration_seconds_bucket[5m])) by (le)",
+                "legendFormat": "{{le}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          },
+          {
+            "id": 7,
+            "title": "Top Endpoints by Traffic",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "topk(10, sum(rate(http_requests_total[5m])) by (endpoint))",
+                "legendFormat": "{{endpoint}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+  nasa-system7-infrastructure.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "NASA System 7 Infrastructure",
+        "tags": ["nasa-system7", "infrastructure"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "CPU Usage",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Memory Usage",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Pod Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(kube_pod_status_phase{phase=\"Running\"})",
+                "legendFormat": "Running"
+              },
+              {
+                "expr": "sum(kube_pod_status_phase{phase=\"Pending\"})",
+                "legendFormat": "Pending"
+              },
+              {
+                "expr": "sum(kube_pod_status_phase{phase=\"Failed\"})",
+                "legendFormat": "Failed"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Node Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
+                "legendFormat": "Ready"
+              },
+              {
+                "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"false\"})",
+                "legendFormat": "Not Ready"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8}
+          },
+          {
+            "id": 5,
+            "title": "Disk Usage",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "(node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+  nasa-system7-database.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "NASA System 7 Database Performance",
+        "tags": ["nasa-system7", "database"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Database Connections",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count",
+                "legendFormat": "Active Connections"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 50},
+                    {"color": "red", "value": 80}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Query Duration (95th percentile)",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, pg_stat_statements_mean_time_seconds)",
+                "legendFormat": "95th percentile"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "s",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 0.1},
+                    {"color": "red", "value": 0.5}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Cache Hit Ratio",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "pg_stat_database_blks_hit / (pg_stat_database_blks_hit + pg_stat_database_blks_read) * 100",
+                "legendFormat": "Cache Hit Ratio"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percent",
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "yellow", "value": 90},
+                    {"color": "green", "value": 95}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+          },
+          {
+            "id": 4,
+            "title": "Transactions per Second",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(rate(pg_stat_database_xact_commit[5m])) + sum(rate(pg_stat_database_xact_rollback[5m]))",
+                "legendFormat": "TPS"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "tps",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 100},
+                    {"color": "red", "value": 500}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+          },
+          {
+            "id": 5,
+            "title": "Database Locks",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "pg_locks_count",
+                "legendFormat": "{{mode}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 6,
+            "title": "Slow Queries",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "pg_stat_statements_mean_time_seconds > 0.5",
+                "legendFormat": "{{query}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+---
+# Grafana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      serviceAccountName: grafana
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.1.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-secrets
+              key: admin-password
+        - name: GF_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-secrets
+              key: db-password
+        - name: GF_SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-secrets
+              key: smtp-password
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/grafana
+        - name: dashboards-volume
+          mountPath: /var/lib/grafana/dashboards/default
+        - name: nasa-dashboards-volume
+          mountPath: /var/lib/grafana/dashboards/nasa-system7
+        - name: storage-volume
+          mountPath: /var/lib/grafana
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 250m
+          limits:
+            memory: 1Gi
+            cpu: 500m
+      volumes:
+      - name: config-volume
+        configMap:
+          name: grafana-config
+      - name: dashboards-volume
+        emptyDir: {}
+      - name: nasa-dashboards-volume
+        configMap:
+          name: nasa-system7-dashboard
+      - name: storage-volume
+        persistentVolumeClaim:
+          claimName: grafana-pvc
+
+---
+# Grafana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '3000'
+spec:
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP
+
+---
+# Grafana PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: gp3
+
+---
+# Grafana ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grafana
+  namespace: monitoring
+
+---
+# Grafana Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-secrets
+  namespace: monitoring
+type: Opaque
+data:
+  admin-password: <base64-encoded-password>
+  db-password: <base64-encoded-db-password>
+  smtp-password: <base64-encoded-smtp-password>

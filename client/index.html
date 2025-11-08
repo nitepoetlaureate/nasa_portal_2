@@ -3,14 +3,193 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="NASA System 7 Portal - Authentic Apple System 7 interface for exploring NASA's space data" />
+
+    <!-- PWA and Mobile Optimization -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#008080" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="NASA S7" />
+    <meta name="application-name" content="NASA System 7 Portal" />
+    <meta name="msapplication-TileColor" content="#008080" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png" />
+
+    <!-- SEO and Social Media -->
+    <meta name="description" content="NASA System 7 Portal - Authentic Apple System 7 interface for exploring NASA's space data with real-time tracking and mobile optimization" />
+    <meta name="keywords" content="NASA, space, asteroids, NEO, System 7, retro, mobile, PWA, real-time" />
+    <meta name="author" content="NASA System 7 Portal Team" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nasa-system7-portal.com/" />
+    <meta property="og:title" content="NASA System 7 Portal" />
+    <meta property="og:description" content="Authentic Apple System 7 interface for exploring NASA's space data with real-time tracking" />
+    <meta property="og:image" content="/screenshots/desktop-view.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://nasa-system7-portal.com/" />
+    <meta property="twitter:title" content="NASA System 7 Portal" />
+    <meta property="twitter:description" content="Authentic Apple System 7 interface for exploring NASA's space data" />
+    <meta property="twitter:image" content="/screenshots/mobile-view.png" />
+
+    <!-- Performance and Caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- Security -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+
+    <!-- Preload critical resources for mobile performance -->
+    <link rel="preload" href="/src/assets/fonts/Chicago.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/src/assets/fonts/Geneva.ttf" as="font" type="font/ttf" crossorigin />
+
+    <!-- DNS prefetch for NASA APIs -->
+    <link rel="dns-prefetch" href="//api.nasa.gov" />
+    <link rel="dns-prefetch" href="//images-api.nasa.gov" />
+
     <title>NASA System 7 Portal</title>
+
+    <!-- Inline critical CSS for faster mobile loading -->
+    <style>
+      /* Critical System 7 styling for loading state */
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background-color: #008080;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Loading animation */
+      .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #008080;
+      }
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #ffffff;
+        border-top: 3px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Mobile optimizations */
+      @media (max-width: 768px) {
+        * {
+          -webkit-tap-highlight-color: transparent;
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          user-select: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <div class="loading-container">
+        <div style="text-align: center; color: white;">
+          <h2>NASA System 7 Portal</h2>
+          <p>You need to enable JavaScript to run this app.</p>
+          <p>This NASA data visualization requires JavaScript for real-time updates.</p>
+        </div>
+      </div>
+    </noscript>
+
+    <!-- Root element for React app -->
     <div id="root"></div>
+
+    <!-- Loading fallback for faster perceived performance -->
+    <script>
+      // Show loading immediately while React loads
+      if (document.getElementById('root')) {
+        document.getElementById('root').innerHTML = `
+          <div class="loading-container">
+            <div style="text-align: center; color: white;">
+              <div class="loading-spinner"></div>
+              <h2 style="font-family: -apple-system, sans-serif; margin-top: 20px;">NASA System 7 Portal</h2>
+              <p style="font-family: -apple-system, sans-serif;">Loading space data...</p>
+            </div>
+          </div>
+        `;
+      }
+    </script>
+
+    <!-- Main React app -->
     <script type="module" src="/src/index.js"></script>
+
+    <!-- Service Worker registration for PWA -->
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('[HTML] SW registered: ', registration);
+            })
+            .catch(registrationError => {
+              console.log('[HTML] SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+
+    <!-- Performance monitoring -->
+    <script>
+      // Monitor Core Web Vitals
+      if ('PerformanceObserver' in window) {
+        // Monitor LCP (Largest Contentful Paint)
+        new PerformanceObserver((entryList) => {
+          const entries = entryList.getEntries();
+          const lastEntry = entries[entries.length - 1];
+          console.log('[Performance] LCP:', lastEntry.renderTime || lastEntry.loadTime);
+        }).observe({ entryTypes: ['largest-contentful-paint'] });
+
+        // Monitor FID (First Input Delay)
+        new PerformanceObserver((entryList) => {
+          for (const entry of entryList.getEntries()) {
+            console.log('[Performance] FID:', entry.processingStart - entry.startTime);
+          }
+        }).observe({ entryTypes: ['first-input'] });
+
+        // Monitor CLS (Cumulative Layout Shift)
+        let clsValue = 0;
+        new PerformanceObserver((entryList) => {
+          for (const entry of entryList.getEntries()) {
+            if (!entry.hadRecentInput) {
+              clsValue += entry.value;
+            }
+          }
+          console.log('[Performance] CLS:', clsValue);
+        }).observe({ entryTypes: ['layout-shift'] });
+      }
+    </script>
   </body>
 </html>

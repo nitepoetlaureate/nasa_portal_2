@@ -1,18 +1,24 @@
 #!/bin/bash
 
-# NASA System 7 Portal Deployment Script
-# This script handles zero-downtime deployments with rollback capabilities
+# NASA System 7 Portal - Enhanced Production Deployment Script
+# Production-ready deployment with comprehensive CI/CD integration and monitoring
 
 set -euo pipefail
 
-# Configuration
+# Script configuration
+SCRIPT_NAME="NASA System 7 Portal Deployment"
+SCRIPT_VERSION="2.0.0"
+LOG_FILE="/var/log/nasa-system7-deploy.log"
+BACKUP_DIR="/backup/nasa-system7"
+HEALTH_CHECK_TIMEOUT=300
+ROLLBACK_THRESHOLD=3
+
+# Default configuration
 APP_NAME="nasa-system7-portal"
 DOCKER_REGISTRY="ghcr.io"
 VERSION=${1:-latest}
 ENVIRONMENT=${2:-production}
-BACKUP_RETENTION_DAYS=7
-HEALTH_CHECK_TIMEOUT=300
-ROLLBACK_THRESHOLD=5
+BACKUP_RETENTION_DAYS=30
 
 # Colors for output
 RED='\033[0;31m'

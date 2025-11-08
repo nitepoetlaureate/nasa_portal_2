@@ -1,0 +1,272 @@
+# NASA System 7 Portal - Artillery Load Testing Configuration
+# Comprehensive performance testing with realistic user scenarios
+
+config:
+  # Target configuration
+  target: 'https://nasa-system7.com'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+
+    # Ramp-up phase
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up load"
+
+    # Sustained load phase
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load"
+
+    # Peak load phase
+    - duration: 120
+      arrivalRate: 100
+      name: "Peak load"
+
+    # Stress test phase
+    - duration: 180
+      arrivalRate: 150
+      name: "Stress test"
+
+    # Recovery phase
+    - duration: 120
+      arrivalRate: 25
+      name: "Recovery"
+
+  # Processor configuration
+  processor: "./test-processor.js"
+
+  # HTTP defaults
+  http:
+    timeout: 30
+    pool: 50
+    extendedMetrics: true
+
+  # Payload configuration
+  payload:
+    path: "./test-data.csv"
+    fields:
+      - "userId"
+      - "sessionId"
+      - "userAgent"
+
+  # Variables
+  variables:
+    apodDates:
+      - "2023-12-25"
+      - "2023-12-26"
+      - "2023-12-27"
+      - "2023-12-28"
+      - "2023-12-29"
+
+scenarios:
+  # Scenario 1: Homepage browsing
+  - name: "Homepage Browsing"
+    weight: 40
+    flow:
+      - get:
+          url: "/"
+          capture:
+            - json: "$.sessionId"
+              as: "sessionId"
+      - think: 3  # User reads content
+      - get:
+          url: "/assets/css/main.css"
+      - get:
+          url: "/assets/js/main.js"
+      - think: 2  # User navigates
+
+  # Scenario 2: APOD (Astronomy Picture of the Day) viewing
+  - name: "APOD Viewing"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/apod?date={{ $randomStringElement(apodDates) }}"
+          capture:
+            - json: "$.url"
+              as: "imageUrl"
+            - json: "$.title"
+              as: "imageTitle"
+      - think: 1
+      - get:
+          url: "{{ imageUrl }}"
+          name: "Load APOD image"
+      - think: 5  # User views image
+      - post:
+          url: "/api/analytics/track"
+          json:
+            event: "apod_view"
+            data:
+              imageTitle: "{{ imageTitle }}"
+              sessionId: "{{ sessionId }}"
+
+  # Scenario 3: Neo (Near-Earth Object) browsing
+  - name: "Neo Browsing"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/neo/browse"
+          capture:
+            - json: "$.near_earth_objects[*].[].id"
+              as: "neoIds"
+      - think: 2
+      - loop:
+          - get:
+              url: "/api/neo/{{ neoId }}"
+              capture:
+                - json: "$.name"
+                  as: "neoName"
+                - json: "$.close_approach_data[0].miss_distance.kilometers"
+                  as: "missDistance"
+          - think: 3  # User reads details
+        count: 5  # Browse 5 NEOs
+
+  # Scenario 4: Mars Rover Photos
+  - name: "Mars Rover Photos"
+    weight: 15
+    flow:
+      - get:
+          url: "/api/mars-photos?sol=1000&camera=navcam"
+          capture:
+            - json: "$.photos[*].img_src"
+              as: "photoUrls"
+      - think: 2
+      - loop:
+          - get:
+              url: "{{ photoUrl }}"
+              name: "Load Mars photo"
+          - think: 4  # User views photo
+        count: 3  # View 3 photos
+
+# Advanced performance metrics
+metrics:
+  # Response time thresholds (in milliseconds)
+  thresholds:
+    http.request_rate: # request per second
+      - from: 0
+        to: 50
+        target: 100
+      - from: 51
+        to: 100
+        target: 95
+      - from: 101
+        to: 150
+        target: 90
+      - from: 151
+        to: 200
+        target: 85
+      - from: 201
+        to: 300
+        target: 80
+      - from: 301
+        to: 500
+        target: 70
+      - from: 501
+        to: 1000
+        target: 50
+      - from: 1001
+        to: 10000
+        target: 20
+      - from: 10001
+        to: 60000
+        target: 10
+      - from: 60001
+        to: "+Infinity"
+        target: 0
+
+    # Error rate thresholds (percentage)
+    http.codes.200: # successful requests
+      - target: 99
+    http.codes.4xx: # client errors
+      - target: 0.5
+    http.codes.5xx: # server errors
+      - target: 0.1
+
+    # Response time thresholds (95th percentile)
+    http.response_time.p95:
+      - target: 500  # 500ms
+      - abort_on_failure: true
+
+    # Response time thresholds (99th percentile)
+    http.response_time.p99:
+      - target: 1000  # 1s
+      - abort_on_failure: true
+
+  # Custom metrics
+  customMetrics:
+    - name: "APOD Load Time"
+      path: "http.response_time"
+      condition: "url.indexOf('/api/apod') !== -1"
+      metricType: "response_time"
+    - name: "Neo API Response Time"
+      path: "http.response_time"
+      condition: "url.indexOf('/api/neo') !== -1"
+      metricType: "response_time"
+    - name: "Mars Photo Load Time"
+      path: "http.response_time"
+      condition: "url.indexOf('/api/mars-photos') !== -1"
+      metricType: "response_time"
+    - name: "Static Asset Load Time"
+      path: "http.response_time"
+      condition: "url.indexOf('/assets/') !== -1"
+      metricType: "response_time"
+
+# Before and after hooks
+before:
+  flow:
+    # Pre-test setup
+    - log: "Starting NASA System 7 Portal load test"
+    - get:
+        url: "/api/health"
+        name: "Verify application health"
+    - think: 5
+
+after:
+  flow:
+    # Post-test cleanup
+    - log: "Load test completed"
+    - get:
+        url: "/api/metrics/export"
+        name: "Export test metrics"
+    - think: 2
+
+# Environment-specific configurations
+environments:
+  development:
+    target: 'http://localhost:3000'
+    phases:
+      - duration: 30
+        arrivalRate: 2
+        name: "Dev warm up"
+      - duration: 60
+        arrivalRate: 5
+        name: "Dev load"
+
+  staging:
+    target: 'https://staging.nasa-system7.com'
+    phases:
+      - duration: 60
+        arrivalRate: 5
+        name: "Staging warm up"
+      - duration: 120
+        arrivalRate: 25
+        name: "Staging load"
+      - duration: 60
+        arrivalRate: 50
+        name: "Staging peak"
+
+  production:
+    target: 'https://nasa-system7.com'
+    phases:
+      - duration: 60
+        arrivalRate: 10
+        name: "Production warm up"
+      - duration: 300
+        arrivalRate: 100
+        name: "Production sustained load"
+      - duration: 120
+        arrivalRate: 200
+        name: "Production peak load"

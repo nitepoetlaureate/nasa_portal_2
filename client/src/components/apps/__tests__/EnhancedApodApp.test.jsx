@@ -11,13 +11,16 @@ vi.mock('../../../services/api.js', () => ({
   getApodForDate: vi.fn(),
 }));
 
-// Mock useOptimizedApi hook
-const mockUseOptimizedApi = vi.fn();
-const mockExecute = vi.fn();
-
+// Mock useOptimizedApi hook - fix hoisting issue
 vi.mock('../../../hooks/usePerformanceOptimized.js', () => ({
-  useOptimizedApi: mockUseOptimizedApi,
+  useOptimizedApi: vi.fn(),
 }));
+
+// Import the mocked hooks for use in tests
+import { useOptimizedApi } from '../../../hooks/usePerformanceOptimized.js';
+
+// Mock execute function
+const mockExecute = vi.fn();
 
 // Mock AppContext
 vi.mock('../../../contexts/AppContext.jsx', () => ({
@@ -80,14 +83,13 @@ describe('Enhanced APOD App Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockExecute.mockClear();
 
     // Setup localStorage mock
     localStorageMock = createLocalStorageMock();
     global.localStorage = localStorageMock;
 
     // Reset useOptimizedApi mock
-    mockUseOptimizedApi.mockReturnValue({
+    useOptimizedApi.mockReturnValue({
       data: null,
       loading: false,
       error: null,
@@ -101,7 +103,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Loading State', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: null,
         loading: true,
         error: null,
@@ -134,7 +136,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Error State', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: null,
         loading: false,
         error: new Error('Failed to fetch enhanced APOD data'),
@@ -169,7 +171,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Image APOD Display', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodData,
         loading: false,
         error: null,
@@ -280,7 +282,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Video APOD Display', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodVideoData,
         loading: false,
         error: null,
@@ -311,7 +313,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Date Navigation', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodData,
         loading: false,
         error: null,
@@ -355,7 +357,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Favorites Functionality', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodData,
         loading: false,
         error: null,
@@ -405,7 +407,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Keyboard Shortcuts', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodData,
         loading: false,
         error: null,
@@ -465,7 +467,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Component Layout and Styling', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodData,
         loading: false,
         error: null,
@@ -520,7 +522,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Download Functionality', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodData,
         loading: false,
         error: null,
@@ -543,7 +545,7 @@ describe('Enhanced APOD App Component', () => {
 
     it('should show SD download link when HD URL is not available', async () => {
       const dataWithoutHdUrl = { ...mockEnhancedApodData, hdurl: null };
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: dataWithoutHdUrl,
         loading: false,
         error: null,
@@ -563,7 +565,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Error Handling', () => {
     it('should handle missing data gracefully', () => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: null,
         loading: false,
         error: null,
@@ -577,7 +579,7 @@ describe('Enhanced APOD App Component', () => {
 
     it('should handle missing copyright gracefully', () => {
       const dataWithoutCopyright = { ...mockEnhancedApodData, copyright: null };
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: dataWithoutCopyright,
         loading: false,
         error: null,
@@ -593,7 +595,7 @@ describe('Enhanced APOD App Component', () => {
 
   describe('Accessibility', () => {
     beforeEach(() => {
-      mockUseOptimizedApi.mockReturnValue({
+      useOptimizedApi.mockReturnValue({
         data: mockEnhancedApodData,
         loading: false,
         error: null,

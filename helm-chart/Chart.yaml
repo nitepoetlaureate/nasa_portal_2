@@ -1,0 +1,46 @@
+apiVersion: v2
+name: nasa-system7-portal
+description: A nostalgic web application that brings NASA's vast collection of space data to life through an authentic Apple System 7 interface
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/nasa-system7/nasa-system7-portal
+sources:
+  - https://github.com/nasa-system7/nasa-system7-portal
+maintainers:
+  - name: NASA System 7 Portal Team
+    email: devops@nasa-system7.com
+keywords:
+  - nasa
+  - space
+  - react
+  - nodejs
+  - system7
+  - retro
+  - education
+  - astronomy
+  - web
+dependencies:
+  - name: postgresql
+    version: 12.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: 17.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: ingress-nginx
+    version: 4.x.x
+    repository: https://kubernetes.github.io/ingress-nginx
+    condition: ingress.enabled
+  - name: cert-manager
+    version: 1.x.x
+    repository: https://charts.jetstack.io
+    condition: cert-manager.enabled
+annotations:
+  category: Web
+  licenses: MIT
+dependencies:
+  - name: common
+    version: 1.x.x
+    repository: https://charts.bitnami.com/bitnami

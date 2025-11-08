@@ -1,39 +1,113 @@
 {
-  "short_name": "NASA System 7",
   "name": "NASA System 7 Portal",
+  "short_name": "NASA S7",
+  "description": "Authentic Apple System 7 interface for NASA space data exploration",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#008080",
+  "theme_color": "#008080",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "science", "utilities"],
   "icons": [
     {
       "src": "favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "type": "image/x-icon",
+      "purpose": "maskable any"
     },
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "maskable any"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
     }
   ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff",
-  "description": "A nostalgic web application that brings NASA's vast collection of space data to life through an authentic Apple System 7 interface.",
-  "category": "education",
+  "shortcuts": [
+    {
+      "name": "APOD - Astronomy Picture",
+      "short_name": "APOD",
+      "description": "View today's Astronomy Picture of the Day",
+      "url": "/apod",
+      "icons": [{ "src": "/icons/apod-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Near-Earth Objects",
+      "short_name": "NEO",
+      "description": "Track near-Earth asteroids and comets",
+      "url": "/neo",
+      "icons": [{ "src": "/icons/neo-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mars Rover Photos",
+      "short_name": "Mars",
+      "description": "Explore Mars surface imagery",
+      "url": "/mars",
+      "icons": [{ "src": "/icons/mars-96x96.png", "sizes": "96x96" }]
+    }
+  ],
   "screenshots": [
     {
       "src": "screenshot1.png",
       "sizes": "1280x720",
-      "type": "image/png"
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop view of NASA System 7 Portal"
+    },
+    {
+      "src": "/screenshots/mobile-view.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile view of NASA System 7 Portal"
     }
   ],
-  "lang": "en",
-  "dir": "ltr",
-  "orientation": "any",
-  "scope": "/",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

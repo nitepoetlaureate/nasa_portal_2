@@ -1,0 +1,505 @@
+name: Full Stack CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, staging ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published, created ]
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# Global environment variables
+  AWS_REGION: us-west-2
+  EKS_CLUSTER: nasa-system7-prod
+
+jobs:
+  # Code Quality and Security Checks
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install all dependencies
+      run: npm run install-all
+
+    - name: Lint client code
+      run: |
+        cd client
+        npm run lint
+
+    - name: Lint server code
+      run: |
+        cd server
+        npm run lint
+
+    - name: Security audit
+      run: |
+        npm audit --production
+        cd client && npm audit --production
+        cd ../server && npm audit --production
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Comprehensive Testing
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nasa_system7_test
+          POSTGRES_USER: test_user
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm run install-all
+
+    - name: Setup test environment
+      run: |
+        echo "DATABASE_URL=postgresql://test_user:postgres@localhost:5432/nasa_system7_test" >> .env.test
+        echo "REDIS_URL=redis://localhost:6379" >> .env.test
+        echo "NODE_ENV=test" >> .env.test
+
+    - name: Run client unit tests
+      run: |
+        cd client
+        npm run test:ci
+
+    - name: Run server unit tests
+      run: |
+        cd server
+        npm run test:ci
+      env:
+        DATABASE_URL: postgresql://test_user:postgres@localhost:5432/nasa_system7_test
+        REDIS_URL: redis://localhost:6379
+        NODE_ENV: test
+
+    - name: Run server integration tests
+      run: |
+        cd server
+        npm run test:integration
+      env:
+        DATABASE_URL: postgresql://test_user:postgres@localhost:5432/nasa_system7_test
+        REDIS_URL: redis://localhost:6379
+        NODE_ENV: test
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./client/coverage/lcov.info,./server/coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+
+  # Build and Containerization
+  build:
+    name: Build & Containerize
+    needs: [code-quality, test]
+    runs-on: ubuntu-latest
+    outputs:
+      client-image: ${{ steps.meta-client.outputs.tags }}
+      server-image: ${{ steps.meta-server.outputs.tags }}
+      client-digest: ${{ steps.build-client.outputs.digest }}
+      server-digest: ${{ steps.build-server.outputs.digest }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract Client Metadata
+      id: meta-client
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-client
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix=client-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Extract Server Metadata
+      id: meta-server
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-server
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix=server-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and Push Client Image
+      id: build-client
+      uses: docker/build-push-action@v5
+      with:
+        context: ./client
+        push: true
+        tags: ${{ steps.meta-client.outputs.tags }}
+        labels: ${{ steps.meta-client.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        target: production
+
+    - name: Build and Push Server Image
+      id: build-server
+      uses: docker/build-push-action@v5
+      with:
+        context: ./server
+        push: true
+        tags: ${{ steps.meta-server.outputs.tags }}
+        labels: ${{ steps.meta-server.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        target: production
+
+    - name: Generate SBOM
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+        syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-client@${{ steps.build-client.outputs.digest }} -o cyclonedx-json > client-sbom.json
+        syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-server@${{ steps.build-server.outputs.digest }} -o cyclonedx-json > server-sbom.json
+
+    - name: Upload SBOM Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom
+        path: "*-sbom.json"
+        retention-days: 90
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    if: github.ref == 'refs/heads/develop'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.nasa-system7.com
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Update kubeconfig
+      run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name nasa-system7-staging
+
+    - name: Deploy to Kubernetes Staging
+      run: |
+        helm upgrade --install nasa-system7 ./helm-chart \
+          --namespace staging \
+          --create-namespace \
+          --set image.client.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-client \
+          --set image.server.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-server \
+          --set image.client.tag=$(echo ${{ needs.build.outputs.client-image }} | cut -d: -f2) \
+          --set image.server.tag=$(echo ${{ needs.build.outputs.server-image }} | cut -d: -f2) \
+          --set environment=staging \
+          --set ingress.host=staging.nasa-system7.com \
+          --set resources.requests.memory=256Mi \
+          --set resources.requests.cpu=250m \
+          --set resources.limits.memory=512Mi \
+          --set resources.limits.cpu=500m \
+          --wait --timeout=600s
+
+    - name: Run Health Checks
+      run: |
+        kubectl wait --for=condition=ready pod -l app=nasa-system7 -n staging --timeout=300s
+        kubectl get pods -n staging -l app=nasa-system7
+
+    - name: Run Smoke Tests
+      run: |
+        sleep 30
+        curl -f https://staging.nasa-system7.com/health || exit 1
+        curl -f https://staging.nasa-system7.com/api/health || exit 1
+
+    - name: Run Performance Tests
+      run: |
+        artillery run performance/smoke-test.yml --target https://staging.nasa-system7.com
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://nasa-system7.com
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Update kubeconfig
+      run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
+
+    - name: Blue-Green Deployment
+      run: |
+        # Determine current color
+        CURRENT_COLOR=$(kubectl get service nasa-system7-service -n production -o jsonpath='{.spec.selector.color}' || echo "blue")
+        NEW_COLOR="green"
+        if [ "$CURRENT_COLOR" = "green" ]; then
+          NEW_COLOR="blue"
+        fi
+
+        echo "Deploying to $NEW_COLOR environment"
+
+        # Deploy new version to new color
+        helm upgrade --install nasa-system7-$NEW_COLOR ./helm-chart \
+          --namespace production \
+          --set image.client.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-client \
+          --set image.server.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-server \
+          --set image.client.tag=$(echo ${{ needs.build.outputs.client-image }} | cut -d: -f2) \
+          --set image.server.tag=$(echo ${{ needs.build.outputs.server-image }} | cut -d: -f2) \
+          --set environment=production \
+          --set deployment.color=$NEW_COLOR \
+          --set ingress.host=nasa-system7.com \
+          --set resources.requests.memory=512Mi \
+          --set resources.requests.cpu=500m \
+          --set resources.limits.memory=1Gi \
+          --set resources.limits.cpu=1000m \
+          --wait --timeout=600s
+
+    - name: Health Check New Deployment
+      run: |
+        # Wait for new deployment to be ready
+        NEW_COLOR=$(kubectl get service nasa-system7-service -n production -o jsonpath='{.spec.selector.color}')
+        if [ "$NEW_COLOR" = "blue" ]; then
+          NEW_COLOR="green"
+        else
+          NEW_COLOR="blue"
+        fi
+
+        kubectl wait --for=condition=ready pod -l color=$NEW_COLOR -n production --timeout=300s
+
+        # Test new deployment through temporary service
+        kubectl expose deployment nasa-system7-$NEW_COLOR \
+          --name=nasa-system7-$NEW_COLOR-temp \
+          --port=80 \
+          --target-port=3000 \
+          --type=LoadBalancer \
+          -n production
+
+    - name: Run Production Tests
+      run: |
+        # Get temporary endpoint
+        TEMP_ENDPOINT=$(kubectl get service nasa-system7-$NEW_COLOR-temp -n production -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+        # Run comprehensive tests
+        curl -f http://$TEMP_ENDPOINT/health || exit 1
+        curl -f http://$TEMP_ENDPOINT/api/health || exit 1
+
+        # Run performance tests
+        artillery run performance/production-test.yml --target http://$TEMP_ENDPOINT
+
+    - name: Switch Traffic
+      run: |
+        # Switch traffic to new deployment
+        NEW_COLOR=$(kubectl get service nasa-system7-service -n production -o jsonpath='{.spec.selector.color}')
+        if [ "$NEW_COLOR" = "blue" ]; then
+          NEW_COLOR="green"
+        else
+          NEW_COLOR="blue"
+        fi
+
+        kubectl patch service nasa-system7-service -n production \
+          -p='{"spec":{"selector":{"color":"'$NEW_COLOR'"}}}'
+
+        # Wait for traffic switch
+        sleep 60
+
+    - name: Verify Production Deployment
+      run: |
+        # Verify new deployment is serving traffic
+        curl -f https://nasa-system7.com/health || exit 1
+        curl -f https://nasa-system7.com/api/health || exit 1
+
+        # Run smoke tests
+        artillery run performance/smoke-test.yml --target https://nasa-system7.com
+
+    - name: Cleanup Old Deployment
+      run: |
+        OLD_COLOR=$(kubectl get service nasa-system7-service -n production -o jsonpath='{.spec.selector.color}')
+        if [ "$OLD_COLOR" = "blue" ]; then
+          OLD_COLOR="green"
+        else
+          OLD_COLOR="blue"
+        fi
+
+        # Remove old deployment and temporary service
+        helm uninstall nasa-system7-$OLD_COLOR -n production || true
+        kubectl delete service nasa-system7-$OLD_COLOR-temp -n production || true
+
+    - name: Notify Deployment Success
+      uses: 8398a7/action-slack@v3
+      if: success()
+      with:
+        status: success
+        text: "🚀 NASA System 7 Portal deployed successfully to production!"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Notify Deployment Failure
+      uses: 8398a7/action-slack@v3
+      if: failure()
+      with:
+        status: failure
+        text: "❌ NASA System 7 Portal deployment to production failed!"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Post-Deployment Monitoring
+  monitor:
+    name: Post-Deployment Monitoring
+    if: github.ref == 'refs/heads/main'
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for Stabilization
+      run: sleep 300
+
+    - name: Check Application Health
+      run: |
+        for i in {1..10}; do
+          curl -f https://nasa-system7.com/health && break || sleep 30
+        done
+
+    - name: Monitor Error Rates
+      uses: jessarcher/gha-metric@v1
+      with:
+        name: error-rate
+        value: ${{ steps.check-metrics.outputs.error-rate }}
+        threshold: 0.01
+
+    - name: Monitor Response Times
+      uses: jessarcher/gha-metric@v1
+      with:
+        name: response-time
+        value: ${{ steps.check-metrics.outputs.response-time }}
+        threshold: 200
+
+  # Rollback on Failure
+  rollback:
+    name: Emergency Rollback
+    if: failure() && github.ref == 'refs/heads/main'
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Rollback Deployment
+      run: |
+        # Get previous stable deployment
+        PREVIOUS_REVISION=$(helm history nasa-system7 -n production --output json | jq -r '.[] | select(.status == "deployed") | .revision' | tail -n 2 | head -n 1)
+
+        if [ -n "$PREVIOUS_REVISION" ]; then
+          echo "Rolling back to revision $PREVIOUS_REVISION"
+          helm rollback nasa-system7 $PREVIOUS_REVISION -n production
+        else
+          echo "No previous revision found, keeping current deployment"
+        fi
+
+    - name: Notify Rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        text: "🔄 NASA System 7 Portal rolled back due to deployment issues!"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

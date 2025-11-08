@@ -85,8 +85,13 @@ describe('NASA System 7 Portal - App Component', () => {
     const mainContainer = document.querySelector('.w-screen.h-screen');
     expect(mainContainer).toBeInTheDocument();
 
-    // Should have MenuBar and Desktop as children
-    expect(mainContainer.children.length).toBe(2);
+    // Should have Suspense wrapper as main child (which contains MenuBar and Desktop)
+    // Plus offline indicator and potentially BundleAnalyzer in development
+    expect(mainContainer.children.length).toBeGreaterThanOrEqual(2);
+
+    // Check that Suspense wrapper contains the expected components
+    const suspenseElement = mainContainer.querySelector('[data-testid="desktop-container"] > div');
+    expect(suspenseElement).toBeInTheDocument();
   });
 
   it('handles window resize gracefully', () => {

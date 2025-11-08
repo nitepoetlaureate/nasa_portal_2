@@ -1,0 +1,130 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Install Semantic Release
+      run: |
+        npm install --save-dev semantic-release
+        npm install --save-dev @semantic-release/changelog
+        npm install --save-dev @semantic-release/commit-analyzer
+        npm install --save-dev @semantic-release/git
+        npm install --save-dev @semantic-release/github
+        npm install --save-dev @semantic-release/release-notes-generator
+
+    - name: Create Release Configuration
+      run: |
+        cat > .releaserc.json << 'EOF'
+        {
+          "branches": ["main"],
+          "plugins": [
+            "@semantic-release/commit-analyzer",
+            "@semantic-release/release-notes-generator",
+            "@semantic-release/changelog",
+            "@semantic-release/github",
+            [
+              "@semantic-release/git",
+              {
+                "assets": ["CHANGELOG.md"],
+                "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+              }
+            ]
+          ]
+        }
+        EOF
+
+    - name: Run Semantic Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npx semantic-release
+
+    - name: Update Package Versions
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: |
+        VERSION="${{ steps.semantic.outputs.new_release_version }}"
+
+        # Update root package.json
+        npm version $VERSION --no-git-tag-version
+
+        # Update client package.json
+        cd client
+        npm version $VERSION --no-git-tag-version
+
+        # Update server package.json
+        cd ../server
+        npm version $VERSION --no-git-tag-version
+
+        # Commit version updates
+        cd ..
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add package.json client/package.json server/package.json
+        git commit -m "chore(version): update package versions to ${VERSION} [skip ci]"
+        git push
+
+    - name: Create Docker Tags
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: |
+        VERSION="${{ steps.semantic.outputs.new_release_version }}"
+        echo "DOCKER_TAG=$VERSION" >> $GITHUB_ENV
+        echo "MAJOR_TAG=$(echo $VERSION | cut -d. -f1)" >> $GITHUB_ENV
+        echo "MINOR_TAG=$(echo $VERSION | cut -d. -f1-2)" >> $GITHUB_ENV
+
+    - name: Build and Push Release Docker Images
+      if: steps.semantic.outputs.new_release_published == 'true'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./client
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}-client:latest
+          ghcr.io/${{ github.repository }}-client:${{ env.DOCKER_TAG }}
+          ghcr.io/${{ github.repository }}-client:${{ env.MAJOR_TAG }}
+          ghcr.io/${{ github.repository }}-client:${{ env.MINOR_TAG }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Build and Push Server Release Docker Images
+      if: steps.semantic.outputs.new_release_published == 'true'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./server
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}-server:latest
+          ghcr.io/${{ github.repository }}-server:${{ env.DOCKER_TAG }}
+          ghcr.io/${{ github.repository }}-server:${{ env.MAJOR_TAG }}
+          ghcr.io/${{ github.repository }}-server:${{ env.MINOR_TAG }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64

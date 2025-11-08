@@ -27,7 +27,7 @@ export default defineConfig({
   // Build configuration
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV === 'development',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -42,6 +42,18 @@ export default defineConfig({
         },
       },
     },
+    // Mobile optimization settings
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    // CSS code splitting
+    cssCodeSplit: true,
+    // Target modern browsers for better performance
+    target: ['es2015', 'chrome58', 'firefox57', 'safari11'],
   },
 
   // Resolve configuration

@@ -1,0 +1,451 @@
+# NASA System 7 Portal - Helm Chart Values
+# Production-ready configuration with comprehensive settings
+
+# ===== Global Configuration =====
+global:
+  imageRegistry: ghcr.io
+  imagePullSecrets:
+    - name: ghcr-secret
+  storageClass: gp3
+  postgresql:
+    auth:
+      postgresPassword: ""
+      database: nasa_system7
+  redis:
+    auth:
+      enabled: true
+      password: ""
+
+# ===== Application Configuration =====
+replicaCount: 3
+
+image:
+  client:
+    registry: ghcr.io
+    repository: nasa-system7-portal/client
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  server:
+    registry: ghcr.io
+    repository: nasa-system7-portal/server
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ===== Service Configuration =====
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# ===== Application Services =====
+client:
+  replicaCount: 3
+  image:
+    repository: nasa-system7-portal/client
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    - name: NODE_ENV
+      value: "production"
+    - name: VITE_API_BASE_URL
+      value: "https://api.{{ .Values.ingress.host }}"
+    - name: VITE_WS_URL
+      value: "wss://api.{{ .Values.ingress.host }}"
+  healthCheck:
+    enabled: true
+    path: /health
+    port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+server:
+  replicaCount: 2
+  image:
+    repository: nasa-system7-portal/server
+  service:
+    type: ClusterIP
+    port: 3001
+    targetPort: 3001
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    - name: NODE_ENV
+      value: "production"
+    - name: PORT
+      value: "3001"
+    - name: LOG_LEVEL
+      value: "info"
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: nasa-system7-secrets
+          key: jwt-secret
+    - name: NASA_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: nasa-system7-secrets
+          key: nasa-api-key
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: nasa-system7-secrets
+          key: database-url
+    - name: REDIS_URL
+      valueFrom:
+        secretKeyRef:
+          name: nasa-system7-secrets
+          key: redis-url
+  healthCheck:
+    enabled: true
+    path: /health
+    port: 3001
+    initialDelaySeconds: 40
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# ===== Ingress Configuration =====
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.nasa.gov https://*.googleapis.com; font-src 'self' data:; connect-src 'self' https://api.nasa.gov https://images-assets.nasa.gov; frame-ancestors 'none';";
+  hosts:
+    - host: nasa-system7.com
+      paths:
+        - path: /api(/|$)(.*)
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ include "nasa-system7-portal.fullname" . }}-server
+              port:
+                number: 3001
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ include "nasa-system7-portal.fullname" . }}-client
+              port:
+                number: 80
+  tls:
+    - secretName: nasa-system7-tls
+      hosts:
+        - nasa-system7.com
+
+# ===== Database Configuration =====
+postgresql:
+  enabled: true
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: gp3
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+  readReplicas:
+    replicaCount: 1
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: gp3
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+  auth:
+    postgresPassword: ""
+    database: nasa_system7
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# ===== Redis Configuration =====
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: ""
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: gp3
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+  replica:
+    replicaCount: 1
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: gp3
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# ===== Monitoring Configuration =====
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+  prometheusRule:
+    enabled: true
+    namespace: monitoring
+    rules:
+      - name: nasa-system7.rules
+        rules:
+          - alert: HighErrorRate
+            expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "High error rate detected"
+              description: "Error rate is {{ $value }} errors per second for {{ $labels.service }}"
+
+          - alert: HighResponseTime
+            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High response time detected"
+              description: "95th percentile response time is {{ $value }} seconds for {{ $labels.service }}"
+
+# ===== Autoscaling Configuration =====
+autoscaling:
+  enabled: true
+  client:
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  server:
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# ===== Network Policies =====
+networkPolicy:
+  enabled: true
+  ingress:
+    enabled: true
+    namespaceSelector:
+      matchLabels:
+        name: ingress-nginx
+  egress:
+    enabled: true
+    cidrs:
+      - 0.0.0.0/0
+    ports:
+      - protocol: TCP
+        port: 443
+      - protocol: TCP
+        port: 53
+      - protocol: UDP
+        port: 53
+
+# ===== Pod Disruption Budget =====
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  maxUnavailable: ""
+
+# ===== Pod Anti-Affinity =====
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - {{ include "nasa-system7-portal.name" . }}
+          topologyKey: kubernetes.io/hostname
+      - weight: 50
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - {{ include "nasa-system7-portal.name" . }}
+          topologyKey: topology.kubernetes.io/zone
+
+# ===== Node Affinity and Tolerations =====
+nodeSelector: {}
+tolerations: []
+
+# ===== Resource Quotas =====
+resourceQuota:
+  enabled: false
+  requests:
+    cpu: "5"
+    memory: "10Gi"
+  limits:
+    cpu: "10"
+    memory: "20Gi"
+
+# ===== Secrets Configuration =====
+secrets:
+  jwtSecret: ""
+  nasaApiKey: ""
+  databasePassword: ""
+  redisPassword: ""
+
+# ===== Backup Configuration =====
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: "30d"
+  s3:
+    bucket: ""
+    region: "us-west-2"
+    accessKeyId: ""
+    secretAccessKey: ""
+
+# ===== Security Configuration =====
+security:
+  podSecurityPolicy:
+    enabled: false
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+# ===== Environment-specific Overrides =====
+environments:
+  development:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+    postgresql:
+      primary:
+        persistence:
+          size: 10Gi
+    redis:
+      master:
+        persistence:
+          size: 1Gi
+
+  staging:
+    replicaCount: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  production:
+    replicaCount: 3
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    monitoring:
+      enabled: true
+    backup:
+      enabled: true
+    networkPolicy:
+      enabled: true
+    podDisruptionBudget:
+      enabled: true
