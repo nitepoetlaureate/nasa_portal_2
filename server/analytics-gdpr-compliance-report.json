@@ -1,0 +1,351 @@
+{
+  "summary": {
+    "duration": 80,
+    "totalTests": 28,
+    "passedTests": 6,
+    "complianceRate": 21.4,
+    "testConsentId": "8aaa89bd-4ef2-4327-801d-ca51466ae3ec",
+    "testSessionId": "test_session_1762613189107_3yrs02w5w",
+    "timestamp": "2025-11-08T14:46:29.189Z"
+  },
+  "detailedResults": {
+    "privacyFirst": {
+      "consentRecording": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.121Z"
+      },
+      "dataMinimization": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.122Z"
+      },
+      "consentBasedCollection": {
+        "passed": true,
+        "details": "Should reject non-consented events",
+        "timestamp": "2025-11-08T14:46:29.123Z"
+      },
+      "dataAnonymization": {
+        "passed": true,
+        "details": "User identifiers properly anonymized",
+        "timestamp": "2025-11-08T14:46:29.123Z"
+      }
+    },
+    "gdprCompliance": {
+      "lawfulBasis": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.124Z"
+      },
+      "consentValidation": {
+        "passed": true,
+        "details": "Should reject invalid consent",
+        "timestamp": "2025-11-08T14:46:29.125Z"
+      },
+      "dataRetention": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.125Z"
+      },
+      "consentWithdrawal": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.126Z"
+      }
+    },
+    "consentManagement": {
+      "granularConsent": {
+        "passed": false,
+        "details": "Some consent categories failed",
+        "timestamp": "2025-11-08T14:46:29.129Z"
+      },
+      "consentPersistence": {
+        "passed": false,
+        "details": "Consent persistence failed",
+        "timestamp": "2025-11-08T14:46:29.130Z"
+      },
+      "consentExpiration": {
+        "passed": false,
+        "details": "Expired consent properly rejected",
+        "timestamp": "2025-11-08T14:46:29.131Z"
+      }
+    },
+    "dataSubjectRights": {
+      "rightToAccess": {
+        "passed": false,
+        "details": "Data export incomplete",
+        "timestamp": "2025-11-08T14:46:29.132Z"
+      },
+      "rightToErasure": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.133Z"
+      },
+      "dataPortability": {
+        "passed": false,
+        "details": "Data format not portable",
+        "timestamp": "2025-11-08T14:46:29.133Z"
+      },
+      "dataAccuracy": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.133Z"
+      }
+    },
+    "analyticsMetrics": {
+      "metricsCoverage": {
+        "passed": false,
+        "details": "0/50 metrics working (0.0%)",
+        "timestamp": "2025-11-08T14:46:29.157Z"
+      },
+      "dashboardAnalytics": {
+        "passed": false,
+        "details": "No dashboard data",
+        "timestamp": "2025-11-08T14:46:29.158Z"
+      },
+      "nasaApiAnalytics": {
+        "passed": false,
+        "details": "No NASA API data",
+        "timestamp": "2025-11-08T14:46:29.158Z"
+      }
+    },
+    "securityControls": {
+      "rateLimiting": {
+        "passed": false,
+        "details": "0 requests properly rate limited",
+        "timestamp": "2025-11-08T14:46:29.181Z"
+      },
+      "inputValidation": {
+        "passed": true,
+        "details": "Should reject malicious input",
+        "timestamp": "2025-11-08T14:46:29.182Z"
+      },
+      "dataEncryption": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.183Z"
+      },
+      "accessControls": {
+        "passed": true,
+        "details": "Dashboard access controlled (should require auth in production)",
+        "timestamp": "2025-11-08T14:46:29.184Z"
+      }
+    },
+    "crossJurisdictional": {
+      "gdprCompliance": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.184Z"
+      },
+      "ccpaCompliance": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.185Z"
+      },
+      "internationalTransfers": {
+        "passed": false,
+        "details": "International transfer controls implemented",
+        "timestamp": "2025-11-08T14:46:29.185Z"
+      }
+    },
+    "auditReporting": {
+      "auditTrail": {
+        "passed": false,
+        "details": "0/5 audit events recorded",
+        "timestamp": "2025-11-08T14:46:29.188Z"
+      },
+      "complianceReporting": {
+        "passed": {
+          "optOutRequests": 8,
+          "deletionRequests": 3,
+          "accessRequests": 12
+        },
+        "details": "Compliance reporting data available",
+        "timestamp": "2025-11-08T14:46:29.188Z"
+      },
+      "breachDetection": {
+        "passed": false,
+        "details": "Error",
+        "timestamp": "2025-11-08T14:46:29.188Z"
+      }
+    }
+  },
+  "recommendations": [
+    {
+      "category": "privacyFirst",
+      "priority": "MEDIUM",
+      "issues": [
+        {
+          "test": "consentRecording",
+          "description": "Error"
+        },
+        {
+          "test": "dataMinimization",
+          "description": "Error"
+        }
+      ],
+      "suggestions": [
+        "Review and enhance data minimization implementation",
+        "Strengthen anonymization and pseudonymization techniques",
+        "Implement stronger consent-based data collection controls"
+      ]
+    },
+    {
+      "category": "gdprCompliance",
+      "priority": "HIGH",
+      "issues": [
+        {
+          "test": "lawfulBasis",
+          "description": "Error"
+        },
+        {
+          "test": "dataRetention",
+          "description": "Error"
+        },
+        {
+          "test": "consentWithdrawal",
+          "description": "Error"
+        }
+      ],
+      "suggestions": [
+        "Ensure all lawful bases for processing are properly documented",
+        "Review data retention policies and automated deletion processes",
+        "Strengthen consent withdrawal and modification procedures"
+      ]
+    },
+    {
+      "category": "consentManagement",
+      "priority": "HIGH",
+      "issues": [
+        {
+          "test": "granularConsent",
+          "description": "Some consent categories failed"
+        },
+        {
+          "test": "consentPersistence",
+          "description": "Consent persistence failed"
+        },
+        {
+          "test": "consentExpiration",
+          "description": "Expired consent properly rejected"
+        }
+      ],
+      "suggestions": [
+        "Implement more granular consent controls",
+        "Enhance consent persistence and caching mechanisms",
+        "Add consent expiration handling"
+      ]
+    },
+    {
+      "category": "dataSubjectRights",
+      "priority": "HIGH",
+      "issues": [
+        {
+          "test": "rightToAccess",
+          "description": "Data export incomplete"
+        },
+        {
+          "test": "rightToErasure",
+          "description": "Error"
+        },
+        {
+          "test": "dataPortability",
+          "description": "Data format not portable"
+        },
+        {
+          "test": "dataAccuracy",
+          "description": "Error"
+        }
+      ],
+      "suggestions": [
+        "Implement comprehensive data export capabilities",
+        "Strengthen data deletion and erasure processes",
+        "Enhance data portability features"
+      ]
+    },
+    {
+      "category": "analyticsMetrics",
+      "priority": "HIGH",
+      "issues": [
+        {
+          "test": "metricsCoverage",
+          "description": "0/50 metrics working (0.0%)"
+        },
+        {
+          "test": "dashboardAnalytics",
+          "description": "No dashboard data"
+        },
+        {
+          "test": "nasaApiAnalytics",
+          "description": "No NASA API data"
+        }
+      ],
+      "suggestions": [
+        "Complete implementation of all 52+ user behavior metrics",
+        "Ensure comprehensive NASA API usage tracking",
+        "Validate performance metrics accuracy"
+      ]
+    },
+    {
+      "category": "securityControls",
+      "priority": "MEDIUM",
+      "issues": [
+        {
+          "test": "rateLimiting",
+          "description": "0 requests properly rate limited"
+        },
+        {
+          "test": "dataEncryption",
+          "description": "Error"
+        }
+      ],
+      "suggestions": [
+        "Implement stronger rate limiting and DDoS protection",
+        "Enhance input validation and sanitization",
+        "Strengthen access controls and authentication"
+      ]
+    },
+    {
+      "category": "crossJurisdictional",
+      "priority": "HIGH",
+      "issues": [
+        {
+          "test": "gdprCompliance",
+          "description": "Error"
+        },
+        {
+          "test": "ccpaCompliance",
+          "description": "Error"
+        },
+        {
+          "test": "internationalTransfers",
+          "description": "International transfer controls implemented"
+        }
+      ],
+      "suggestions": [
+        "Implement proper international data transfer controls",
+        "Enhance GDPR/CCPA jurisdiction-specific handling",
+        "Strengthen cross-border data protection measures"
+      ]
+    },
+    {
+      "category": "auditReporting",
+      "priority": "HIGH",
+      "issues": [
+        {
+          "test": "auditTrail",
+          "description": "0/5 audit events recorded"
+        },
+        {
+          "test": "breachDetection",
+          "description": "Error"
+        }
+      ],
+      "suggestions": [
+        "Implement comprehensive audit trail logging",
+        "Enhance compliance reporting capabilities",
+        "Strengthen security incident detection and reporting"
+      ]
+    }
+  ]
+}
