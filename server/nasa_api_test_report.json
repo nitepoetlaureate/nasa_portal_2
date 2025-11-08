@@ -1,0 +1,344 @@
+{
+  "timestamp": "2025-11-08T10:40:42.427Z",
+  "summary": {
+    "totalTests": 61,
+    "passedTests": 1,
+    "failedTests": 25,
+    "apiResponseTimes": [
+      17,
+      107,
+      3,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "cacheHits": 1,
+    "cacheMisses": 5
+  },
+  "tests": {
+    "apod": {
+      "today": {
+        "success": true,
+        "responseTime": 17,
+        "status": 200,
+        "data": {
+          "title": "Hubble Views Grand Design Spiral Galaxy M81",
+          "explanation": "The sharpest view ever taken of the large grand-design spiral galaxy M81 is being compiled from images taken by NASA Hubble Space Telescope. Though the galaxy is over 11.6 million light-years away, the vision of Hubble is so powerful that it can resolve individual stars, along with open star clusters, globular star clusters, and even glowing regions of fluorescent gas.",
+          "url": "https://apod.nasa.gov/apod/image/2408/M81_Hubble_3000.jpg",
+          "hdurl": "https://apod.nasa.gov/apod/image/2408/M81_Hubble_6000.jpg",
+          "media_type": "image",
+          "date": "2025-11-08",
+          "copyright": "NASA, ESA, J. Dalcanton, B.F. Williams, L. Dalcanton (University of Washington)",
+          "service_version": "v1",
+          "fallback": true
+        },
+        "description": "Today's APOD",
+        "validStructure": true,
+        "hasMedia": true,
+        "hasExplanation": true
+      },
+      "specificDate": {
+        "success": false,
+        "responseTime": 107,
+        "status": 0,
+        "error": "socket hang up",
+        "description": "APOD for specific date (2024-01-01)"
+      },
+      "enhanced": {
+        "success": false,
+        "responseTime": 3,
+        "status": 0,
+        "error": "Error",
+        "description": "Enhanced APOD endpoint"
+      },
+      "range": {
+        "success": false,
+        "responseTime": 0,
+        "status": 0,
+        "error": "Error",
+        "description": "APOD date range"
+      },
+      "cache": {
+        "firstRequest": {
+          "success": false,
+          "responseTime": 1,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - First request (apod)"
+        },
+        "secondRequest": {
+          "success": false,
+          "responseTime": 1,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - Second request (apod)"
+        },
+        "cachePerformance": false
+      }
+    },
+    "neows": {
+      "feed": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "NeoWs Feed (today)"
+      },
+      "feedByDate": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "NeoWs Feed by date range"
+      },
+      "lookup": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "NeoWs Lookup"
+      },
+      "browse": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "NeoWs Browse"
+      },
+      "cache": {
+        "firstRequest": {
+          "success": false,
+          "responseTime": 0,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - First request (neo)"
+        },
+        "secondRequest": {
+          "success": false,
+          "responseTime": 1,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - Second request (neo)"
+        },
+        "cachePerformance": false
+      }
+    },
+    "donki": {
+      "cme": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "DONKI CME"
+      },
+      "flr": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "DONKI FLR"
+      },
+      "sep": {
+        "success": false,
+        "responseTime": 0,
+        "status": 0,
+        "error": "Error",
+        "description": "DONKI SEP"
+      },
+      "gst": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "DONKI GST"
+      },
+      "mp": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "DONKI MP"
+      },
+      "cache": {
+        "firstRequest": {
+          "success": false,
+          "responseTime": 0,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - First request (donki)"
+        },
+        "secondRequest": {
+          "success": false,
+          "responseTime": 1,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - Second request (donki)"
+        },
+        "cachePerformance": false
+      }
+    },
+    "iss": {
+      "positions": {
+        "success": false,
+        "responseTime": 0,
+        "status": 0,
+        "error": "Error",
+        "description": "ISS Positions"
+      },
+      "telemetry": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "ISS Telemetry"
+      },
+      "visibility": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "ISS Visibility"
+      },
+      "cache": {
+        "firstRequest": {
+          "success": false,
+          "responseTime": 0,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - First request (iss)"
+        },
+        "secondRequest": {
+          "success": false,
+          "responseTime": 1,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - Second request (iss)"
+        },
+        "cachePerformance": false
+      }
+    },
+    "epic": {
+      "natural": {
+        "success": false,
+        "responseTime": 0,
+        "status": 0,
+        "error": "Error",
+        "description": "EPIC Natural Images"
+      },
+      "naturalDate": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "EPIC Natural Images by Date"
+      },
+      "enhanced": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "Enhanced EPIC"
+      },
+      "cache": {
+        "firstRequest": {
+          "success": false,
+          "responseTime": 0,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - First request (epic)"
+        },
+        "secondRequest": {
+          "success": false,
+          "responseTime": 1,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - Second request (epic)"
+        },
+        "cachePerformance": false
+      }
+    },
+    "mars": {
+      "curiosity": {
+        "success": false,
+        "responseTime": 0,
+        "status": 0,
+        "error": "Error",
+        "description": "Mars Rover - Curiosity"
+      },
+      "opportunity": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "Mars Rover - Opportunity"
+      },
+      "spirit": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "Mars Rover - Spirit"
+      },
+      "enhanced": {
+        "success": false,
+        "responseTime": 0,
+        "status": 0,
+        "error": "Error",
+        "description": "Enhanced Mars Rover"
+      },
+      "cache": {
+        "firstRequest": {
+          "success": false,
+          "responseTime": 1,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - First request (mars)"
+        },
+        "secondRequest": {
+          "success": false,
+          "responseTime": 0,
+          "status": 0,
+          "error": "Error",
+          "description": "Cache test - Second request (mars)"
+        },
+        "cachePerformance": true
+      }
+    },
+    "server": {
+      "health": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "Server Health Check"
+      },
+      "metrics": {
+        "success": false,
+        "responseTime": 0,
+        "status": 0,
+        "error": "Error",
+        "description": "Server Metrics"
+      },
+      "streamStatus": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "error": "Error",
+        "description": "Stream Status"
+      }
+    }
+  }
+}

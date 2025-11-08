@@ -1,0 +1,219 @@
+{
+  "timestamp": "2025-11-08T10:42:54.434Z",
+  "tests": {
+    "nasaProxy": {
+      "APOD Today": {
+        "success": true,
+        "responseTime": 16,
+        "status": 200,
+        "statusText": "OK",
+        "data": {
+          "title": "Hubble Views Grand Design Spiral Galaxy M81",
+          "explanation": "The sharpest view ever taken of the large grand-design spiral galaxy M81 is being compiled from images taken by NASA Hubble Space Telescope. Though the galaxy is over 11.6 million light-years away, the vision of Hubble is so powerful that it can resolve individual stars, along with open star clusters, globular star clusters, and even glowing regions of fluorescent gas.",
+          "url": "https://apod.nasa.gov/apod/image/2408/M81_Hubble_3000.jpg",
+          "hdurl": "https://apod.nasa.gov/apod/image/2408/M81_Hubble_6000.jpg",
+          "media_type": "image",
+          "date": "2025-11-08",
+          "copyright": "NASA, ESA, J. Dalcanton, B.F. Williams, L. Dalcanton (University of Washington)",
+          "service_version": "v1",
+          "fallback": true
+        },
+        "description": "APOD Today"
+      },
+      "APOD Specific Date": {
+        "success": false,
+        "responseTime": 408,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "socket hang up",
+        "description": "APOD Specific Date",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/nasa/planetary/apod?api_key=DEMO_KEY&date=2024-01-01",
+          "code": "ECONNRESET",
+          "isAxiosError": true
+        }
+      },
+      "NeoWs Feed": {
+        "success": false,
+        "responseTime": 4,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "NeoWs Feed",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/nasa/neo/rest/v1/feed?api_key=DEMO_KEY",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      },
+      "DONKI CME": {
+        "success": false,
+        "responseTime": 3,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "DONKI CME",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/nasa/DONKI/CME?api_key=DEMO_KEY&startDate=2024-01-01&endDate=2024-01-07",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      },
+      "EPIC Natural Images": {
+        "success": false,
+        "responseTime": 2,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "EPIC Natural Images",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/nasa/EPIC/api/natural/images?api_key=DEMO_KEY",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      },
+      "Mars Rover Curiosity": {
+        "success": false,
+        "responseTime": 3,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "Mars Rover Curiosity",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/nasa/mars-photos/api/v1/rovers/curiosity/photos?earth_date=2024-01-01&api_key=DEMO_KEY",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      }
+    },
+    "enhanced": {
+      "Enhanced APOD": {
+        "success": false,
+        "responseTime": 5,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "Enhanced APOD",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/apod/enhanced/2024-01-01",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      },
+      "Enhanced NeoWs": {
+        "success": false,
+        "responseTime": 2,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "Enhanced NeoWs",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/neo/enhanced/2024-01-01",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      }
+    },
+    "cache": {
+      "apod": {
+        "firstRequest": {
+          "success": false,
+          "responseTime": 4,
+          "status": 0,
+          "statusText": "Network Error",
+          "error": "Error",
+          "description": "APOD Cache - First Request",
+          "errorDetails": {
+            "config": "http://localhost:3001/api/nasa/planetary/apod?api_key=DEMO_KEY",
+            "code": "ECONNREFUSED",
+            "isAxiosError": true
+          }
+        },
+        "secondRequest": {
+          "success": false,
+          "responseTime": 3,
+          "status": 0,
+          "statusText": "Network Error",
+          "error": "Error",
+          "description": "APOD Cache - Second Request",
+          "errorDetails": {
+            "config": "http://localhost:3001/api/nasa/planetary/apod?api_key=DEMO_KEY",
+            "code": "ECONNREFUSED",
+            "isAxiosError": true
+          }
+        },
+        "isFaster": true,
+        "improvement": "25.0"
+      }
+    },
+    "health": {
+      "Health Check": {
+        "success": false,
+        "responseTime": 2,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "Health Check",
+        "errorDetails": {
+          "config": "http://localhost:3001/health",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      },
+      "Metrics": {
+        "success": false,
+        "responseTime": 2,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "Metrics",
+        "errorDetails": {
+          "config": "http://localhost:3001/metrics",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      },
+      "Stream Status": {
+        "success": false,
+        "responseTime": 2,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "Stream Status",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/streams/status",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      }
+    },
+    "discovery": {
+      "APOD without params": {
+        "success": false,
+        "responseTime": 1,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "APOD without params",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/nasa/planetary/apod",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      },
+      "APOD Range (POST)": {
+        "success": false,
+        "responseTime": 5,
+        "status": 0,
+        "statusText": "Network Error",
+        "error": "Error",
+        "description": "APOD Range (POST)",
+        "errorDetails": {
+          "config": "http://localhost:3001/api/apod/range",
+          "code": "ECONNREFUSED",
+          "isAxiosError": true
+        }
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const JwtStrategy = require('passport-jwt').Strategy;
-const ExtractJwt = require('passport-jwt').ExtractJwt');
+const ExtractJwt = require('passport-jwt').ExtractJwt;
 const { cache } = require('../middleware/cache');
 
 // JWT Strategy for API authentication
