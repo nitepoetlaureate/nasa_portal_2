@@ -29,7 +29,7 @@ vi.mock('../../../contexts/AppContext.jsx', () => ({
 }));
 
 // Mock OptimizedImage
-vi.mock('../../Performance/OptimizedImage.js', () => ({
+vi.mock('../../Performance/OptimizedImage', () => ({
   default: ({ src, alt, className, ...props }) => (
     <img data-testid="optimized-image" src={src} alt={alt} className={className} {...props} />
   ),

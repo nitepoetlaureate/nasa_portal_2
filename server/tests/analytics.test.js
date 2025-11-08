@@ -1,5 +1,4 @@
-const request = require('supertest');
-const { db } = require('../config/database');
+const { createTestApp, testHelpers } = require('./test-helper');
 const analyticsService = require('../services/analyticsService');
 
 // Mock analytics service
@@ -9,46 +8,12 @@ describe('Analytics API Routes', () => {
   let app;
 
   beforeAll(async () => {
-    // Set up test app
-    process.env.NODE_ENV = 'test';
-    delete require.cache[require.resolve('../server.js')];
-    app = require('../server.js');
-
-    // Initialize test database
-    try {
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS analytics_consent (
-          consent_id VARCHAR(255) PRIMARY KEY,
-          consent_granted BOOLEAN NOT NULL,
-          consent_data JSONB,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
-
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS analytics_events (
-          event_id VARCHAR(255) PRIMARY KEY,
-          consent_id VARCHAR(255),
-          event_type VARCHAR(100) NOT NULL,
-          event_category VARCHAR(100) NOT NULL,
-          event_action VARCHAR(255) NOT NULL,
-          timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
-    } catch (error) {
-      console.warn('Test database setup failed:', error.message);
-    }
+    // Create isolated test app
+    app = createTestApp();
   });
 
   afterAll(async () => {
-    // Clean up test database
-    try {
-      await db.query('DROP TABLE IF EXISTS analytics_events CASCADE');
-      await db.query('DROP TABLE IF EXISTS analytics_consent CASCADE');
-      await db.close();
-    } catch (error) {
-      console.warn('Test database cleanup failed:', error.message);
-    }
+    // Cleanup is handled by test helper
   });
 
   beforeEach(() => {
@@ -126,7 +91,7 @@ describe('Analytics API Routes', () => {
     });
   });
 
-  describe('GET /api/analytics/consent/:consentId/check', async () => {
+  describe('GET /api/analytics/consent/:consentId/check', () => {
     it('should check consent status for valid category', async () => {
       analyticsService.hasConsent.mockResolvedValue(true);
 

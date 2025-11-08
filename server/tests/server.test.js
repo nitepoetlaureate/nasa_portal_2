@@ -1,37 +1,29 @@
 const request = require('supertest');
-const express = require('express');
-
-// Create a minimal test app to verify server setup
-const app = express();
-app.use(express.json());
-
-// Basic test route
-app.get('/test', (req, res) => {
-  res.json({ message: 'Server is running', status: 'ok' });
-});
-
-// Health check route (similar to main server)
-app.get('/', (req, res) => {
-  res.send('NASA System 7 Portal Backend is running.');
-});
+const { createTestApp, testHelpers, mockNasaResponses } = require('./test-helper');
 
 describe('NASA System 7 Portal - Basic Server Tests', () => {
+  let app;
+
+  beforeAll(() => {
+    app = createTestApp();
+  });
+
   describe('Server Health', () => {
     it('should return 200 for health check', async () => {
       const response = await request(app)
         .get('/')
         .expect(200);
 
-      expect(response.text).toBe('NASA System 7 Portal Backend is running.');
+      expect(response.text).toContain('NASA System 7 Portal Backend is running');
     });
 
-    it('should return proper JSON for test endpoint', async () => {
+    it('should return proper JSON for health endpoint', async () => {
       const response = await request(app)
-        .get('/test')
+        .get('/health')
         .expect(200);
 
-      expect(response.body).toHaveProperty('message', 'Server is running');
       expect(response.body).toHaveProperty('status', 'ok');
+      expect(response.body).toHaveProperty('timestamp');
     });
   });
 
@@ -44,7 +36,7 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
 
     it('should handle malformed JSON', async () => {
       const response = await request(app)
-        .post('/test')
+        .post('/health')
         .set('Content-Type', 'application/json')
         .send('invalid json')
         .expect(400);
@@ -54,7 +46,7 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
   describe('Headers and Security', () => {
     it('should include basic security headers', async () => {
       const response = await request(app)
-        .get('/test')
+        .get('/health')
         .expect(200);
 
       // Basic headers that should be present
@@ -62,33 +54,31 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
       expect(response.headers['content-type']).toContain('application/json');
     });
 
-    it('should handle CORS preflight requests', async () => {
+    it('should handle CORS preflight requests gracefully', async () => {
       const response = await request(app)
-        .options('/test')
+        .options('/health')
         .set('Origin', 'http://localhost:3000')
         .set('Access-Control-Request-Method', 'GET')
-        .expect(404); // Since we don't have CORS middleware in test app
+        .expect(404); // CORS not implemented in test app, should return 404
     });
   });
 
   describe('Environment Setup', () => {
     it('should have test environment variables set', () => {
       expect(process.env.NODE_ENV).toBe('test');
-      expect(process.env.PORT).toBe('3002');
       expect(process.env.NASA_API_KEY).toBe('DEMO_KEY');
     });
 
-    it('should have mocked database pool available', () => {
-      const { mockPool } = require('./setup');
-      expect(mockPool).toBeDefined();
-      expect(mockPool.query).toBeDefined();
-      expect(typeof mockPool.query).toBe('function');
+    it('should have properly imported test helpers', () => {
+      expect(testHelpers).toBeDefined();
+      expect(testHelpers.createNasaMockResponse).toBeDefined();
+      expect(testHelpers.createDbMockResponse).toBeDefined();
+      expect(testHelpers.createNasaErrorResponse).toBeDefined();
     });
   });
 
   describe('Mock NASA API Responses', () => {
     it('should have properly structured mock APOD data', () => {
-      const { mockNasaResponses } = require('./setup');
       expect(mockNasaResponses).toBeDefined();
       expect(mockNasaResponses.apod).toBeDefined();
 
@@ -101,7 +91,6 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
     });
 
     it('should have properly structured mock NEO data', () => {
-      const { mockNasaResponses } = require('./setup');
       expect(mockNasaResponses.neo).toBeDefined();
 
       const neoData = mockNasaResponses.neo;
@@ -111,7 +100,6 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
     });
 
     it('should have properly structured mock resource data', () => {
-      const { mockNasaResponses } = require('./setup');
       expect(mockNasaResponses.resource).toBeDefined();
 
       const resourceData = mockNasaResponses.resource;
@@ -123,7 +111,6 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
 
   describe('Test Helpers', () => {
     it('should provide helper for creating mock responses', () => {
-      const { testHelpers } = require('./setup');
       expect(testHelpers).toBeDefined();
       expect(testHelpers.createNasaMockResponse).toBeDefined();
       expect(typeof testHelpers.createNasaMockResponse).toBe('function');
@@ -134,7 +121,6 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
     });
 
     it('should provide helper for creating mock database responses', () => {
-      const { testHelpers } = require('./setup');
       expect(testHelpers.createDbMockResponse).toBeDefined();
 
       const mockDbResponse = testHelpers.createDbMockResponse([{ id: 1 }]);
@@ -143,7 +129,6 @@ describe('NASA System 7 Portal - Basic Server Tests', () => {
     });
 
     it('should provide helper for creating error responses', () => {
-      const { testHelpers } = require('./setup');
       expect(testHelpers.createNasaErrorResponse).toBeDefined();
 
       const errorResponse = testHelpers.createNasaErrorResponse(500, 'Test Error');

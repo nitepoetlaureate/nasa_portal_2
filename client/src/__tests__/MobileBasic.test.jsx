@@ -2,11 +2,11 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock all the hooks and dependencies
-vi.mock('../hooks/useMediaQuery.js', () => ({
+vi.mock('../hooks/useMediaQuery', () => ({
   useMediaQuery: vi.fn()
 }));
 
-vi.mock('../hooks/useTouchGestures.js', () => ({
+vi.mock('../hooks/useTouchGestures', () => ({
   useTouchGestures: vi.fn(() => ({
     onTouchStart: vi.fn(),
     onTouchMove: vi.fn(),
@@ -18,15 +18,15 @@ vi.mock('../hooks/useTouchGestures.js', () => ({
   }))
 }));
 
-vi.mock('../hooks/useSound.js', () => ({
+vi.mock('../hooks/useSound', () => ({
   useSound: vi.fn(() => vi.fn())
 }));
 
-vi.mock('../hooks/usePerformanceOptimized.js', () => ({
+vi.mock('../hooks/usePerformanceOptimized', () => ({
   useBundleMonitor: vi.fn()
 }));
 
-vi.mock('../contexts/AppContext.jsx', () => ({
+vi.mock('../contexts/AppContext', () => ({
   useApps: vi.fn(() => ({
     apps: {},
     openApp: vi.fn(),
@@ -35,11 +35,11 @@ vi.mock('../contexts/AppContext.jsx', () => ({
   }))
 }));
 
-vi.mock('../components/Performance/BundleAnalyzer.jsx', () => ({
+vi.mock('../components/Performance/BundleAnalyzer', () => ({
   default: () => null
 }));
 
-vi.mock('../components/Performance/MobilePerformanceMonitor.jsx', () => ({
+vi.mock('../components/Performance/MobilePerformanceMonitor', () => ({
   default: () => null
 }));
 
@@ -106,7 +106,7 @@ describe('Mobile Basic Tests', () => {
       dispatchEvent: vi.fn(),
     }));
 
-    const { useMediaQuery } = require('../hooks/useMediaQuery.js');
+    const { useMediaQuery } = require('../hooks/useMediaQuery');
     useMediaQuery.mockReturnValue(true);
 
     expect(useMediaQuery('(max-width: 768px)')).toBe(true);

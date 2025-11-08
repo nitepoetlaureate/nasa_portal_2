@@ -35,33 +35,39 @@ let pubSubManager = null;
 let websocketServer = null;
 let nasaStreamingService = null;
 
-// Security and performance middleware
+// Enhanced security middleware
+const {
+  securityHeaders,
+  rateLimiters,
+  validateInput,
+  requestSizeLimit,
+  ipBlacklist,
+  securityLogger,
+  preventParameterPollution,
+  generateCSRFToken,
+  validateCSRFToken
+} = require('./middleware/security-enhanced');
+
+// Apply security middleware in correct order
+app.use(securityLogger);
+app.use(ipBlacklist);
+app.use(securityHeaders);
+app.use(preventParameterPollution);
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://api.nasa.gov", "https://images.nasa.gov"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      connectSrc: ["'self'", "https://api.nasa.gov"] // Fixed NASA API URL
-    }
-  }
+  contentSecurityPolicy: false // Using custom CSP in securityHeaders
 }));
 
 // Compression middleware for response compression
 app.use(compression());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: {
-    error: 'Too many requests from this IP, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
+// Enhanced rate limiting with different limits for different endpoint types
+app.use('/api/auth', rateLimiters.auth);
+app.use('/api/nasa', rateLimiters.public);
+app.use('/api/', rateLimiters.general);
+
+// Apply input validation and size limits to all API endpoints
+app.use('/api/', validateInput);
+app.use('/api/', requestSizeLimit('1mb'));
 
 // Logging middleware
 if (process.env.NODE_ENV !== 'production') {
@@ -80,9 +86,17 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware with security constraints
+app.use(express.json({
+  limit: '1mb', // Reduced from 10mb for security
+  strict: true,
+  type: 'application/json'
+}));
+app.use(express.urlencoded({
+  extended: true,
+  limit: '1mb', // Reduced from 10mb for security
+  parameterLimit: 100
+}));
 
 // Initialize Passport for OAuth
 app.use(passport.initialize());
@@ -95,6 +109,21 @@ app.use('/api/apod', apodEnhancedRouter);
 app.use('/api/neo', neoEnhancedRouter);
 app.use('/api/resources', resourceEnhancedRouter);
 app.use('/api/analytics', analyticsRouter);
+
+// CSRF token endpoint
+app.get('/api/csrf-token', (req, res) => {
+  const token = generateCSRFToken();
+  req.session = req.session || {};
+  req.session.csrfToken = token;
+
+  res.json({
+    csrfToken: token,
+    cspNonce: req.cspNonce
+  });
+});
+
+// Apply CSRF protection to state-changing operations
+app.use(['/api/', '/auth/'], validateCSRFToken);
 
 // Phase 3 Authentication routes
 app.use('/auth', authRoutes);

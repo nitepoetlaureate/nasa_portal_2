@@ -15,6 +15,20 @@ jest.mock('pg', () => ({
   Pool: jest.fn(() => mockPool),
 }));
 
+// Mock Redis for testing
+const mockRedis = {
+  get: jest.fn(),
+  set: jest.fn(),
+  del: jest.fn(),
+  exists: jest.fn(),
+  flushall: jest.fn(),
+  quit: jest.fn(),
+};
+
+jest.mock('redis', () => ({
+  createClient: jest.fn(() => mockRedis),
+}));
+
 // Global test setup
 beforeAll(async () => {
   // Set test environment variables

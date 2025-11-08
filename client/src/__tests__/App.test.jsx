@@ -9,7 +9,7 @@ vi.mock('../hooks/usePerformanceOptimized.js', () => ({
 }));
 
 // Mock the BundleAnalyzer
-vi.mock('../components/Performance/BundleAnalyzer.js', () => ({
+vi.mock('../components/Performance/BundleAnalyzer', () => ({
   default: () => <div data-testid="bundle-analyzer">Bundle Analyzer</div>,
 }));
 

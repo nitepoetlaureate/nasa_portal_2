@@ -1,7 +1,8 @@
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
-const validator = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
+const crypto = require('crypto');
 
 // Enhanced security middleware configuration
 const securityMiddleware = {
@@ -116,10 +117,14 @@ const securityMiddleware = {
       .withMessage('Limit must be between 1 and 100')
   ],
 
-  // Validation result handler
+  // Enhanced validation result handler
   handleValidationErrors: (req, res, next) => {
-    const errors = validator.validationResult(req);
+    const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      // Log validation failures for security monitoring
+      console.warn(`[SECURITY] Validation failed for ${req.method} ${req.path}:`,
+        errors.array().map(e => ({ field: e.param, value: e.value })));
+
       return res.status(400).json({
         error: 'Validation failed',
         details: errors.array().map(error => ({
@@ -129,6 +134,85 @@ const securityMiddleware = {
         }))
       });
     }
+    next();
+  },
+
+  // SQL Injection prevention
+  preventSQLInjection: (req, res, next) => {
+    const sqlPatterns = [
+      /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
+      /(--|#|\/\*|\*\/)/g,
+      /(\bOR\b.*\b=\b|\bAND\b.*\b=\b)/gi,
+      /(\bLIKE\b.*['%_])/gi,
+      /(\bWHERE\b.*\bOR\b)/gi,
+      /(\bUNION\b.*\bSELECT\b)/gi
+    ];
+
+    const checkValue = (value) => {
+      if (typeof value === 'string') {
+        for (const pattern of sqlPatterns) {
+          if (pattern.test(value)) {
+            console.warn(`[SECURITY] Potential SQL injection detected: ${value}`);
+            return false;
+          }
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        for (const key in value) {
+          if (!checkValue(value[key])) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+
+    // Check all request parameters
+    if (!checkValue(req.query) || !checkValue(req.body) || !checkValue(req.params)) {
+      return res.status(400).json({
+        error: 'Invalid input detected',
+        message: 'Request contains potentially malicious content'
+      });
+    }
+
+    next();
+  },
+
+  // XSS prevention
+  preventXSS: (req, res, next) => {
+    const xssPatterns = [
+      /<script[^>]*>.*?<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+      /<iframe[^>]*>.*?<\/iframe>/gi,
+      /<object[^>]*>.*?<\/object>/gi,
+      /<embed[^>]*>.*?<\/embed>/gi,
+      /eval\s*\(/gi,
+      /expression\s*\(/gi,
+      /@import/i,
+      /vbscript:/gi,
+      /data:(?!image\/)/gi
+    ];
+
+    const sanitizeValue = (value) => {
+      if (typeof value === 'string') {
+        for (const pattern of xssPatterns) {
+          if (pattern.test(value)) {
+            console.warn(`[SECURITY] Potential XSS detected: ${value.substring(0, 100)}`);
+            return value.replace(/<[^>]*>/g, '').replace(/javascript:/gi, '').replace(/on\w+\s*=/gi, '');
+          }
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        for (const key in value) {
+          value[key] = sanitizeValue(value[key]);
+        }
+      }
+      return value;
+    };
+
+    req.query = sanitizeValue(req.query);
+    req.body = sanitizeValue(req.body);
+    req.params = sanitizeValue(req.params);
+
     next();
   },
 
