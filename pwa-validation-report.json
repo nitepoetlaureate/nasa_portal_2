@@ -1,0 +1,307 @@
+{
+  "timestamp": "2025-11-08T14:37:51.816Z",
+  "overall": {
+    "score": 85,
+    "issues": [
+      "PWA accessibility features are missing"
+    ],
+    "recommendations": [
+      "Add performance monitoring to the service worker",
+      "Implement cache expiration policies for NASA data",
+      "Add image optimization for NASA space imagery"
+    ]
+  },
+  "results": {
+    "manifest": {
+      "valid": true,
+      "missingFields": [],
+      "hasName": true,
+      "hasShortName": true,
+      "hasStartUrl": true,
+      "hasDisplay": true,
+      "hasBackgroundColor": true,
+      "hasThemeColor": true,
+      "hasOrientation": true,
+      "hasIcons": true,
+      "hasShortcuts": true,
+      "hasScreenshots": true,
+      "displayMode": "standalone",
+      "iconCount": 9,
+      "shortcutCount": 3,
+      "categories": [
+        "education",
+        "science",
+        "utilities"
+      ],
+      "data": {
+        "name": "NASA System 7 Portal",
+        "short_name": "NASA S7",
+        "description": "Authentic Apple System 7 interface for NASA space data exploration",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#008080",
+        "theme_color": "#008080",
+        "orientation": "any",
+        "scope": "/",
+        "lang": "en",
+        "dir": "ltr",
+        "categories": [
+          "education",
+          "science",
+          "utilities"
+        ],
+        "icons": [
+          {
+            "src": "favicon.ico",
+            "sizes": "64x64 32x32 24x24 16x16",
+            "type": "image/x-icon",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "logo192.png",
+            "type": "image/png",
+            "sizes": "192x192",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "logo512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "/icons/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "/icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "/icons/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "/icons/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "/icons/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "maskable any"
+          },
+          {
+            "src": "/icons/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "maskable any"
+          }
+        ],
+        "shortcuts": [
+          {
+            "name": "APOD - Astronomy Picture",
+            "short_name": "APOD",
+            "description": "View today's Astronomy Picture of the Day",
+            "url": "/apod",
+            "icons": [
+              {
+                "src": "/icons/apod-96x96.png",
+                "sizes": "96x96"
+              }
+            ]
+          },
+          {
+            "name": "Near-Earth Objects",
+            "short_name": "NEO",
+            "description": "Track near-Earth asteroids and comets",
+            "url": "/neo",
+            "icons": [
+              {
+                "src": "/icons/neo-96x96.png",
+                "sizes": "96x96"
+              }
+            ]
+          },
+          {
+            "name": "Mars Rover Photos",
+            "short_name": "Mars",
+            "description": "Explore Mars surface imagery",
+            "url": "/mars",
+            "icons": [
+              {
+                "src": "/icons/mars-96x96.png",
+                "sizes": "96x96"
+              }
+            ]
+          }
+        ],
+        "screenshots": [
+          {
+            "src": "screenshot1.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Desktop view of NASA System 7 Portal"
+          },
+          {
+            "src": "/screenshots/mobile-view.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Mobile view of NASA System 7 Portal"
+          }
+        ],
+        "prefer_related_applications": false,
+        "edge_side_panel": {
+          "preferred_width": 400
+        }
+      },
+      "hasRequiredIconSizes": true,
+      "hasMaskableIcons": true,
+      "shortcutValid": true
+    },
+    "serviceWorker": {
+      "valid": true,
+      "features": {
+        "hasInstallEvent": true,
+        "hasActivateEvent": true,
+        "hasFetchEvent": true,
+        "hasCacheAPI": true,
+        "hasSkipWaiting": true,
+        "hasClientsClaim": true,
+        "hasCacheCleanup": true,
+        "hasNetworkStrategies": false,
+        "hasOfflineFallback": true,
+        "hasBackgroundSync": true,
+        "hasPushNotifications": true,
+        "hasPerformanceMonitoring": false
+      },
+      "nasaFeatures": {
+        "cachesNASAData": true,
+        "hasAPICaching": true,
+        "hasStaleWhileRevalidate": false,
+        "handlesNASAEndpoints": true
+      },
+      "cacheStrategies": {
+        "staticCache": true,
+        "dynamicCache": true,
+        "dataCache": true,
+        "versionedCaches": true
+      },
+      "fileSize": 10,
+      "lineCount": 345,
+      "hasErrorHandling": true,
+      "hasConsoleLogging": true,
+      "hasCacheStats": true
+    },
+    "caching": {
+      "strategies": {
+        "staticAssets": {
+          "implemented": true,
+          "strategy": "cache-first",
+          "assets": [
+            "/",
+            "/index.html",
+            "/manifest.json",
+            "/src/assets/fonts/Geneva.ttf",
+            "/logo192.png",
+            "/logo512.png"
+          ]
+        },
+        "nasaData": {
+          "implemented": true,
+          "strategy": "cache-first",
+          "endpoints": [
+            "api/apod",
+            "api/neo",
+            "api/mars"
+          ]
+        },
+        "dynamicContent": {
+          "implemented": true,
+          "strategy": "cache-first"
+        }
+      },
+      "validation": {
+        "hasVersionedCaches": true,
+        "hasCacheExpiration": false,
+        "hasCacheLimit": false,
+        "hasBackgroundSync": true,
+        "handlesCacheErrors": true,
+        "providesOfflineFallbacks": true
+      },
+      "valid": true
+    },
+    "offline": {
+      "features": {
+        "hasOfflineDetection": true,
+        "hasOfflinePages": true,
+        "hasOfflineImages": true,
+        "hasFallbackData": true,
+        "cachesCriticalPages": true,
+        "providesOfflineUI": false,
+        "hasClientOfflineDetection": true,
+        "hasOfflineUI": true,
+        "hasNetworkStatusMonitoring": true
+      },
+      "offlineFirst": {
+        "cachesAppShell": true,
+        "cachesCriticalAssets": true,
+        "providesCachedData": true,
+        "handlesOfflineRequests": true,
+        "gracefulDegradation": true
+      },
+      "valid": true
+    },
+    "accessibility": {
+      "checks": {
+        "manifestHasAccessibleName": true,
+        "appHasAriaLabels": true,
+        "appHasKeyboardNavigation": false,
+        "appHasScreenReaderSupport": true,
+        "appHasFocusManagement": false,
+        "hasHighContrastSupport": false,
+        "hasReducedMotionSupport": false
+      },
+      "valid": false
+    },
+    "performance": {
+      "checks": {
+        "hasLazyLoading": true,
+        "hasCodeSplitting": true,
+        "hasBundleOptimization": true,
+        "hasImageOptimization": false,
+        "hasCachingHeaders": false,
+        "hasCompressionEnabled": false,
+        "hasServiceWorkerCaching": true
+      },
+      "valid": true
+    },
+    "overall": {
+      "score": 85,
+      "issues": [
+        "PWA accessibility features are missing"
+      ],
+      "recommendations": [
+        "Add performance monitoring to the service worker",
+        "Implement cache expiration policies for NASA data",
+        "Add image optimization for NASA space imagery"
+      ]
+    }
+  },
+  "summary": {
+    "score": 85,
+    "grade": "A",
+    "issuesCount": 1,
+    "recommendationsCount": 3
+  }
+}
