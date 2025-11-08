@@ -1,0 +1,1061 @@
+/**
+ * NASA System 7 Portal - Standalone Authentication Security Test Suite
+ * Phase 3 Authentication System Validation
+ * Tests JWT, OAuth, MFA, and all security controls without requiring server instance
+ */
+
+const crypto = require('crypto');
+const speakeasy = require('speakeasy');
+const jwt = require('jsonwebtoken');
+
+class StandaloneAuthSecurityTest {
+  constructor() {
+    this.testResults = {
+      timestamp: new Date().toISOString(),
+      jwt: {},
+      oauth: {},
+      mfa: {},
+      security: {},
+      vulnerabilities: [],
+      performance: {}
+    };
+
+    // Initialize with test environment variables
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-key-for-testing-only';
+    process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh-secret-key-for-testing-only';
+
+    this.authService = new (require('../auth/authService'))();
+    this.testUsers = this.generateTestUsers();
+  }
+
+  generateTestUsers() {
+    return {
+      valid: {
+        id: 'test-user-1',
+        email: 'test@nasa-system7.com',
+        role: 'user',
+        mfaVerified: false
+      },
+      admin: {
+        id: 'admin-user-1',
+        email: 'admin@nasa-system7.com',
+        role: 'admin',
+        mfaVerified: true
+      }
+    };
+  }
+
+  async executeFullTestSuite() {
+    console.log('🔐 NASA System 7 Portal - Standalone Authentication Security Test Suite');
+    console.log('=' .repeat(70));
+    console.log('Phase 3: Authentication System Validation (No Server Required)');
+    console.log('Starting comprehensive security assessment...\n');
+
+    try {
+      await this.testJWTAuthentication();
+      await this.testOAuthIntegration();
+      await this.testMFASystem();
+      await this.testSecurityControls();
+      await this.testVulnerabilityScenarios();
+      await this.testPerformanceImpact();
+      await this.generateSecurityReport();
+
+      console.log('\n✅ Authentication security testing completed successfully!');
+      return this.testResults;
+    } catch (error) {
+      console.error('❌ Authentication security testing failed:', error.message);
+      throw error;
+    }
+  }
+
+  async testJWTAuthentication() {
+    console.log('🔑 Testing JWT Authentication...');
+    console.log('-'.repeat(50));
+
+    const jwtResults = {
+      tokenGeneration: { passed: 0, failed: 0, tests: [] },
+      tokenValidation: { passed: 0, failed: 0, tests: [] },
+      tokenRefresh: { passed: 0, failed: 0, tests: [] },
+      tokenSecurity: { passed: 0, failed: 0, tests: [] },
+      tokenBlacklisting: { passed: 0, failed: 0, tests: [] }
+    };
+
+    // Test 1: JWT Token Generation
+    try {
+      console.log('  📝 Testing JWT token generation...');
+      const user = this.testUsers.valid;
+      const accessToken = this.authService.generateAccessToken(user);
+      const refreshToken = this.authService.generateRefreshToken(user);
+
+      const accessPayload = jwt.decode(accessToken);
+      const refreshPayload = jwt.decode(refreshToken);
+
+      this.assert(accessPayload.id === user.id, 'Access token contains correct user ID');
+      this.assert(accessPayload.type === 'access', 'Access token has correct type');
+      this.assert(accessPayload.exp, 'Access token has expiration');
+      this.assert(refreshPayload.type === 'refresh', 'Refresh token has correct type');
+      this.assert(refreshPayload.sessionId, 'Refresh token has session ID');
+
+      const now = Math.floor(Date.now() / 1000);
+      this.assert(accessPayload.exp > now, 'Access token not expired');
+      this.assert(accessPayload.exp <= now + (15 * 60), 'Access token expires within 15 minutes');
+
+      jwtResults.tokenGeneration.passed++;
+      jwtResults.tokenGeneration.tests.push({
+        name: 'JWT Token Generation',
+        status: 'PASS',
+        details: 'Tokens generated with correct structure and expiration'
+      });
+
+      console.log('    ✅ JWT token generation working correctly');
+    } catch (error) {
+      jwtResults.tokenGeneration.failed++;
+      jwtResults.tokenGeneration.tests.push({
+        name: 'JWT Token Generation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ JWT token generation failed: ${error.message}`);
+    }
+
+    // Test 2: JWT Token Validation
+    try {
+      console.log('  🔍 Testing JWT token validation...');
+      const user = this.testUsers.valid;
+      const validToken = this.authService.generateAccessToken(user);
+
+      const decodedValid = await this.authService.verifyAccessToken(validToken);
+      this.assert(decodedValid.id === user.id, 'Valid token decoded correctly');
+
+      // Test invalid token
+      const invalidToken = validToken.slice(0, -1) + 'X';
+      try {
+        await this.authService.verifyAccessToken(invalidToken);
+        throw new Error('Invalid token should have been rejected');
+      } catch (err) {
+        this.assert(err.message.includes('Invalid token'), 'Invalid token properly rejected');
+      }
+
+      jwtResults.tokenValidation.passed++;
+      jwtResults.tokenValidation.tests.push({
+        name: 'JWT Token Validation',
+        status: 'PASS',
+        details: 'Valid and invalid tokens handled correctly'
+      });
+
+      console.log('    ✅ JWT token validation working correctly');
+    } catch (error) {
+      jwtResults.tokenValidation.failed++;
+      jwtResults.tokenValidation.tests.push({
+        name: 'JWT Token Validation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ JWT token validation failed: ${error.message}`);
+    }
+
+    // Test 3: JWT Token Refresh
+    try {
+      console.log('  🔄 Testing JWT token refresh...');
+      const user = this.testUsers.valid;
+      const refreshToken = this.authService.generateRefreshToken(user);
+
+      const refreshResult = await this.authService.refreshAccessToken(refreshToken);
+      this.assert(refreshResult.accessToken, 'New access token generated');
+      this.assert(refreshResult.expiresIn === 15 * 60, 'Correct expiration time returned');
+
+      const newDecoded = await this.authService.verifyAccessToken(refreshResult.accessToken);
+      this.assert(newDecoded.id === user.id, 'Refreshed token has correct user ID');
+
+      jwtResults.tokenRefresh.passed++;
+      jwtResults.tokenRefresh.tests.push({
+        name: 'JWT Token Refresh',
+        status: 'PASS',
+        details: 'Access tokens refreshed successfully'
+      });
+
+      console.log('    ✅ JWT token refresh working correctly');
+    } catch (error) {
+      jwtResults.tokenRefresh.failed++;
+      jwtResults.tokenRefresh.tests.push({
+        name: 'JWT Token Refresh',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ JWT token refresh failed: ${error.message}`);
+    }
+
+    // Test 4: JWT Token Security
+    try {
+      console.log('  🛡️  Testing JWT token security...');
+      const user = this.testUsers.valid;
+      const token = this.authService.generateAccessToken(user);
+
+      const manipulatedToken = token.slice(0, 50) + 'HACKED' + token.slice(56);
+      try {
+        await this.authService.verifyAccessToken(manipulatedToken);
+        throw new Error('Manipulated token should be rejected');
+      } catch (err) {
+        this.assert(err.message.includes('Invalid token'), 'Manipulated token rejected');
+      }
+
+      const tokenParts = token.split('.');
+      const fakeSignature = crypto.randomBytes(64).toString('base64url');
+      const fakeToken = `${tokenParts[0]}.${tokenParts[1]}.${fakeSignature}`;
+
+      try {
+        await this.authService.verifyAccessToken(fakeToken);
+        throw new Error('Token with fake signature should be rejected');
+      } catch (err) {
+        this.assert(err.message.includes('Invalid token'), 'Fake signature rejected');
+      }
+
+      jwtResults.tokenSecurity.passed++;
+      jwtResults.tokenSecurity.tests.push({
+        name: 'JWT Token Security',
+        status: 'PASS',
+        details: 'Token manipulation and signature attacks prevented'
+      });
+
+      console.log('    ✅ JWT token security working correctly');
+    } catch (error) {
+      jwtResults.tokenSecurity.failed++;
+      jwtResults.tokenSecurity.tests.push({
+        name: 'JWT Token Security',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ JWT token security failed: ${error.message}`);
+    }
+
+    // Test 5: JWT Token Blacklisting
+    try {
+      console.log('  📋 Testing JWT token blacklisting...');
+      const user = this.testUsers.valid;
+      const token = this.authService.generateAccessToken(user);
+
+      await this.authService.verifyAccessToken(token);
+      const revokeResult = await this.authService.revokeToken(token);
+      this.assert(revokeResult, 'Token successfully blacklisted');
+
+      try {
+        await this.authService.verifyAccessToken(token);
+        throw new Error('Blacklisted token should be rejected');
+      } catch (err) {
+        this.assert(err.message.includes('revoked'), 'Blacklisted token rejected');
+      }
+
+      jwtResults.tokenBlacklisting.passed++;
+      jwtResults.tokenBlacklisting.tests.push({
+        name: 'JWT Token Blacklisting',
+        status: 'PASS',
+        details: 'Tokens can be blacklisted and are properly rejected'
+      });
+
+      console.log('    ✅ JWT token blacklisting working correctly');
+    } catch (error) {
+      jwtResults.tokenBlacklisting.failed++;
+      jwtResults.tokenBlacklisting.tests.push({
+        name: 'JWT Token Blacklisting',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ JWT token blacklisting failed: ${error.message}`);
+    }
+
+    this.testResults.jwt = jwtResults;
+    console.log('✅ JWT Authentication testing completed\n');
+  }
+
+  async testOAuthIntegration() {
+    console.log('🌐 Testing OAuth Integration...');
+    console.log('-'.repeat(50));
+
+    const oauthResults = {
+      google: { passed: 0, failed: 0, tests: [] },
+      github: { passed: 0, failed: 0, tests: [] },
+      nasa: { passed: 0, failed: 0, tests: [] },
+      security: { passed: 0, failed: 0, tests: [] }
+    };
+
+    // Test Google OAuth
+    try {
+      console.log('  🔍 Testing Google OAuth integration...');
+      const state = crypto.randomBytes(16).toString('hex');
+      const googleAuthUrl = this.authService.getOAuthAuthorizationUrl('google', state);
+
+      this.assert(googleAuthUrl.includes('accounts.google.com'), 'Google OAuth URL correct');
+      this.assert(googleAuthUrl.includes('client_id'), 'Client ID included in URL');
+      this.assert(googleAuthUrl.includes(state), 'State parameter included');
+      this.assert(googleAuthUrl.includes('profile email'), 'Correct scope requested');
+
+      oauthResults.google.passed++;
+      oauthResults.google.tests.push({
+        name: 'Google OAuth URL Generation',
+        status: 'PASS',
+        details: 'Authorization URL generated correctly'
+      });
+
+      console.log('    ✅ Google OAuth URL generation working');
+    } catch (error) {
+      oauthResults.google.failed++;
+      oauthResults.google.tests.push({
+        name: 'Google OAuth URL Generation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ Google OAuth test failed: ${error.message}`);
+    }
+
+    // Test GitHub OAuth
+    try {
+      console.log('  🔍 Testing GitHub OAuth integration...');
+      const state = crypto.randomBytes(16).toString('hex');
+      const githubAuthUrl = this.authService.getOAuthAuthorizationUrl('github', state);
+
+      this.assert(githubAuthUrl.includes('github.com/login/oauth/authorize'), 'GitHub OAuth URL correct');
+      this.assert(githubAuthUrl.includes('client_id'), 'Client ID included in URL');
+      this.assert(githubAuthUrl.includes(state), 'State parameter included');
+      this.assert(githubAuthUrl.includes('user:email'), 'Correct scope requested');
+
+      oauthResults.github.passed++;
+      oauthResults.github.tests.push({
+        name: 'GitHub OAuth URL Generation',
+        status: 'PASS',
+        details: 'Authorization URL generated correctly'
+      });
+
+      console.log('    ✅ GitHub OAuth URL generation working');
+    } catch (error) {
+      oauthResults.github.failed++;
+      oauthResults.github.tests.push({
+        name: 'GitHub OAuth URL Generation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ GitHub OAuth test failed: ${error.message}`);
+    }
+
+    // Test NASA OAuth (Development Mode)
+    try {
+      console.log('  🔍 Testing NASA OAuth integration...');
+      const state = crypto.randomBytes(16).toString('hex');
+      const nasaAuthUrl = this.authService.getOAuthAuthorizationUrl('nasa', state);
+
+      this.assert(nasaAuthUrl.includes('auth.nasa.gov') || nasaAuthUrl.includes('localhost'), 'NASA OAuth URL correct');
+      this.assert(nasaAuthUrl.includes('client_id'), 'Client ID included in URL');
+      this.assert(nasaAuthUrl.includes(state), 'State parameter included');
+
+      oauthResults.nasa.passed++;
+      oauthResults.nasa.tests.push({
+        name: 'NASA OAuth URL Generation',
+        status: 'PASS',
+        details: 'Authorization URL generated correctly'
+      });
+
+      console.log('    ✅ NASA OAuth URL generation working');
+    } catch (error) {
+      oauthResults.nasa.failed++;
+      oauthResults.nasa.tests.push({
+        name: 'NASA OAuth URL Generation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ NASA OAuth test failed: ${error.message}`);
+    }
+
+    // Test OAuth Security
+    try {
+      console.log('  🛡️  Testing OAuth security...');
+
+      try {
+        this.authService.getOAuthAuthorizationUrl('invalid', 'state');
+        throw new Error('Invalid provider should throw error');
+      } catch (err) {
+        this.assert(err.message.includes('Unsupported OAuth provider'), 'Invalid provider rejected');
+      }
+
+      const state1 = crypto.randomBytes(16).toString('hex');
+      const state2 = crypto.randomBytes(16).toString('hex');
+
+      const url1 = this.authService.getOAuthAuthorizationUrl('google', state1);
+      const url2 = this.authService.getOAuthAuthorizationUrl('google', state2);
+
+      this.assert(url1 !== url2, 'Different states generate different URLs');
+      this.assert(url1.includes(state1), 'State1 correctly included');
+      this.assert(url2.includes(state2), 'State2 correctly included');
+
+      oauthResults.security.passed++;
+      oauthResults.security.tests.push({
+        name: 'OAuth Security Validation',
+        status: 'PASS',
+        details: 'Invalid providers rejected, state parameters validated'
+      });
+
+      console.log('    ✅ OAuth security working correctly');
+    } catch (error) {
+      oauthResults.security.failed++;
+      oauthResults.security.tests.push({
+        name: 'OAuth Security Validation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ OAuth security test failed: ${error.message}`);
+    }
+
+    this.testResults.oauth = oauthResults;
+    console.log('✅ OAuth Integration testing completed\n');
+  }
+
+  async testMFASystem() {
+    console.log('🔐 Testing MFA System...');
+    console.log('-'.repeat(50));
+
+    const mfaResults = {
+      secretGeneration: { passed: 0, failed: 0, tests: [] },
+      tokenVerification: { passed: 0, failed: 0, tests: [] },
+      sessionManagement: { passed: 0, failed: 0, tests: [] },
+      qrCodeGeneration: { passed: 0, failed: 0, tests: [] }
+    };
+
+    // Test 1: MFA Secret Generation
+    try {
+      console.log('  🔑 Testing MFA secret generation...');
+      const user = this.testUsers.valid;
+      const mfaSecret = this.authService.generateMFASecret(user);
+
+      this.assert(mfaSecret.secret, 'MFA secret generated');
+      this.assert(mfaSecret.qrCodeUrl, 'QR code URL generated');
+      this.assert(mfaSecret.secret.length === 32, 'Secret has correct length (32 chars)');
+      this.assert(mfaSecret.qrCodeUrl.includes('otpauth://'), 'QR code URL is valid OTPAuth URL');
+      this.assert(mfaSecret.qrCodeUrl.includes(user.email), 'QR code URL includes user email');
+
+      mfaResults.secretGeneration.passed++;
+      mfaResults.secretGeneration.tests.push({
+        name: 'MFA Secret Generation',
+        status: 'PASS',
+        details: 'MFA secrets and QR codes generated correctly'
+      });
+
+      console.log('    ✅ MFA secret generation working correctly');
+    } catch (error) {
+      mfaResults.secretGeneration.failed++;
+      mfaResults.secretGeneration.tests.push({
+        name: 'MFA Secret Generation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ MFA secret generation failed: ${error.message}`);
+    }
+
+    // Test 2: MFA Token Verification
+    try {
+      console.log('  🔍 Testing MFA token verification...');
+      const user = this.testUsers.valid;
+      const mfaSecret = this.authService.generateMFASecret(user);
+
+      const validToken = speakeasy.totp({
+        secret: mfaSecret.secret,
+        encoding: 'base32'
+      });
+
+      const isValid = await this.authService.verifyMFAToken(user.id, validToken);
+      this.assert(isValid, 'Valid MFA token verified successfully');
+
+      const invalidToken = '123456';
+      const isInvalid = await this.authService.verifyMFAToken(user.id, invalidToken);
+      this.assert(!isInvalid, 'Invalid MFA token rejected');
+
+      const previousToken = speakeasy.totp({
+        secret: mfaSecret.secret,
+        encoding: 'base32',
+        time: Math.floor(Date.now() / 1000) - 30
+      });
+
+      const isPreviousValid = await this.authService.verifyMFAToken(user.id, previousToken);
+      this.assert(isPreviousValid, 'Previous time window token accepted');
+
+      mfaResults.tokenVerification.passed++;
+      mfaResults.tokenVerification.tests.push({
+        name: 'MFA Token Verification',
+        status: 'PASS',
+        details: 'Valid tokens accepted, invalid tokens rejected, time window respected'
+      });
+
+      console.log('    ✅ MFA token verification working correctly');
+    } catch (error) {
+      mfaResults.tokenVerification.failed++;
+      mfaResults.tokenVerification.tests.push({
+        name: 'MFA Token Verification',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ MFA token verification failed: ${error.message}`);
+    }
+
+    // Test 3: MFA Session Management
+    try {
+      console.log('  📋 Testing MFA session management...');
+      const user = this.testUsers.valid;
+      const mfaSecret = this.authService.generateMFASecret(user);
+      const validToken = speakeasy.totp({
+        secret: mfaSecret.secret,
+        encoding: 'base32'
+      });
+
+      const sessionId = await this.authService.createMFASession(user.id, validToken);
+      this.assert(sessionId, 'MFA session created');
+      this.assert(sessionId.length === 36, 'Session ID is valid UUID');
+
+      const isVerified = await this.authService.verifyMFASession(sessionId, validToken);
+      this.assert(isVerified, 'MFA session verified successfully');
+
+      const isVerifiedAgain = await this.authService.verifyMFASession(sessionId, validToken);
+      this.assert(!isVerifiedAgain, 'MFA session properly consumed');
+
+      mfaResults.sessionManagement.passed++;
+      mfaResults.sessionManagement.tests.push({
+        name: 'MFA Session Management',
+        status: 'PASS',
+        details: 'MFA sessions created, verified, and consumed correctly'
+      });
+
+      console.log('    ✅ MFA session management working correctly');
+    } catch (error) {
+      mfaResults.sessionManagement.failed++;
+      mfaResults.sessionManagement.tests.push({
+        name: 'MFA Session Management',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ MFA session management failed: ${error.message}`);
+    }
+
+    // Test 4: QR Code Generation
+    try {
+      console.log('  📱 Testing QR code generation...');
+      const user = this.testUsers.valid;
+      const mfaSecret = this.authService.generateMFASecret(user);
+
+      const qrUrl = mfaSecret.qrCodeUrl;
+      this.assert(qrUrl.startsWith('otpauth://totp/'), 'QR code URL has correct protocol');
+      this.assert(qrUrl.includes('NASA%20System%207%20Portal'), 'QR code includes issuer');
+      this.assert(qrUrl.includes(user.email), 'QR code includes user email');
+      this.assert(qrUrl.includes('secret='), 'QR code includes secret parameter');
+      this.assert(qrUrl.includes('issuer=NASA%20System%207%20Portal'), 'QR code includes issuer parameter');
+
+      mfaResults.qrCodeGeneration.passed++;
+      mfaResults.qrCodeGeneration.tests.push({
+        name: 'QR Code Generation',
+        status: 'PASS',
+        details: 'QR codes generated with correct OTPAuth format'
+      });
+
+      console.log('    ✅ QR code generation working correctly');
+    } catch (error) {
+      mfaResults.qrCodeGeneration.failed++;
+      mfaResults.qrCodeGeneration.tests.push({
+        name: 'QR Code Generation',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ QR code generation failed: ${error.message}`);
+    }
+
+    this.testResults.mfa = mfaResults;
+    console.log('✅ MFA System testing completed\n');
+  }
+
+  async testSecurityControls() {
+    console.log('🛡️ Testing Security Controls...');
+    console.log('-'.repeat(50));
+
+    const securityResults = {
+      rateLimiting: { passed: 0, failed: 0, tests: [] },
+      passwordSecurity: { passed: 0, failed: 0, tests: [] },
+      tokenSecurity: { passed: 0, failed: 0, tests: [] }
+    };
+
+    // Test 1: Rate Limiting
+    try {
+      console.log('  ⏱️  Testing rate limiting...');
+      const identifier = 'test-user-' + Date.now();
+
+      const rateCheck1 = await this.authService.checkRateLimit(identifier, 3, 5000);
+      this.assert(rateCheck1.allowed, 'First request allowed');
+      this.assert(rateCheck1.remaining === 2, 'Correct remaining requests');
+
+      const rateCheck2 = await this.authService.checkRateLimit(identifier, 3, 5000);
+      this.assert(rateCheck2.allowed, 'Second request allowed');
+      this.assert(rateCheck2.remaining === 1, 'Correct remaining requests');
+
+      const rateCheck3 = await this.authService.checkRateLimit(identifier, 3, 5000);
+      this.assert(rateCheck3.allowed, 'Third request allowed');
+      this.assert(rateCheck3.remaining === 0, 'No remaining requests');
+
+      const rateCheck4 = await this.authService.checkRateLimit(identifier, 3, 5000);
+      this.assert(!rateCheck4.allowed, 'Fourth request blocked');
+      this.assert(rateCheck4.remaining === 0, 'No remaining requests when blocked');
+
+      securityResults.rateLimiting.passed++;
+      securityResults.rateLimiting.tests.push({
+        name: 'Rate Limiting',
+        status: 'PASS',
+        details: 'Rate limits enforced correctly'
+      });
+
+      console.log('    ✅ Rate limiting working correctly');
+    } catch (error) {
+      securityResults.rateLimiting.failed++;
+      securityResults.rateLimiting.tests.push({
+        name: 'Rate Limiting',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ Rate limiting failed: ${error.message}`);
+    }
+
+    // Test 2: Password Security
+    try {
+      console.log('  🔐 Testing password security...');
+      const password = 'TestPassword123!';
+      const weakPassword = '123456';
+
+      const hashedPassword = await this.authService.hashPassword(password);
+      this.assert(hashedPassword !== password, 'Password is properly hashed');
+      this.assert(hashedPassword.length > 50, 'Hash has sufficient length');
+      this.assert(hashedPassword.includes('$2b$12$'), 'Using bcrypt with correct rounds');
+
+      const isValidPassword = await this.authService.verifyPassword(password, hashedPassword);
+      this.assert(isValidPassword, 'Correct password verified');
+
+      const isInvalidPassword = await this.authService.verifyPassword(weakPassword, hashedPassword);
+      this.assert(!isInvalidPassword, 'Incorrect password rejected');
+
+      const token1 = this.authService.generateSecureToken();
+      const token2 = this.authService.generateSecureToken();
+      this.assert(token1 !== token2, 'Tokens are unique');
+      this.assert(token1.length === 64, 'Token has correct length (32 bytes * 2 hex chars)');
+
+      securityResults.passwordSecurity.passed++;
+      securityResults.passwordSecurity.tests.push({
+        name: 'Password Security',
+        status: 'PASS',
+        details: 'Passwords hashed securely with bcrypt, tokens generated securely'
+      });
+
+      console.log('    ✅ Password security working correctly');
+    } catch (error) {
+      securityResults.passwordSecurity.failed++;
+      securityResults.passwordSecurity.tests.push({
+        name: 'Password Security',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ Password security failed: ${error.message}`);
+    }
+
+    this.testResults.security = securityResults;
+    console.log('✅ Security Controls testing completed\n');
+  }
+
+  async testVulnerabilityScenarios() {
+    console.log('🔍 Testing Vulnerability Scenarios...');
+    console.log('-'.repeat(50));
+
+    // Test 1: JWT Brute Force Protection
+    try {
+      console.log('  💥 Testing JWT brute force protection...');
+      const maliciousToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Ik1hbGljaW91cyJ9.invalid_signature';
+
+      let attempts = 0;
+      let blocked = false;
+
+      for (let i = 0; i < 20; i++) {
+        try {
+          await this.authService.verifyAccessToken(maliciousToken);
+          attempts++;
+        } catch (error) {
+          attempts++;
+          if (error.message.includes('Too many requests') || error.message.includes('rate limit')) {
+            blocked = true;
+            break;
+          }
+        }
+      }
+
+      this.testResults.vulnerabilities.push({
+        test: 'JWT Brute Force Protection',
+        status: blocked ? 'PASS' : 'WARNING',
+        details: `Made ${attempts} attempts, ${blocked ? 'blocked' : 'not blocked'}`
+      });
+
+      console.log(`    ${blocked ? '✅' : '⚠️'} JWT brute force ${blocked ? 'blocked' : 'not fully blocked'}`);
+    } catch (error) {
+      this.testResults.vulnerabilities.push({
+        test: 'JWT Brute Force Protection',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ JWT brute force test failed: ${error.message}`);
+    }
+
+    // Test 2: Token Manipulation
+    try {
+      console.log('  🔧 Testing token manipulation protection...');
+      const user = this.testUsers.valid;
+      const validToken = this.authService.generateAccessToken(user);
+
+      const tokenParts = validToken.split('.');
+      const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+
+      payload.role = 'admin';
+      const manipulatedPayload = Buffer.from(JSON.stringify(payload)).toString('base64');
+      const manipulatedToken = `${tokenParts[0]}.${manipulatedPayload}.${tokenParts[2]}`;
+
+      try {
+        await this.authService.verifyAccessToken(manipulatedToken);
+        this.testResults.vulnerabilities.push({
+          test: 'Token Manipulation Protection',
+          status: 'FAIL',
+          details: 'Manipulated token was accepted'
+        });
+        console.log('    ❌ Token manipulation protection failed');
+      } catch (error) {
+        this.testResults.vulnerabilities.push({
+          test: 'Token Manipulation Protection',
+          status: 'PASS',
+          details: 'Manipulated token properly rejected'
+        });
+        console.log('    ✅ Token manipulation protection working');
+      }
+    } catch (error) {
+      this.testResults.vulnerabilities.push({
+        test: 'Token Manipulation Protection',
+        status: 'FAIL',
+        error: error.message
+      });
+      console.log(`    ❌ Token manipulation test failed: ${error.message}`);
+    }
+
+    console.log('✅ Vulnerability Scenario testing completed\n');
+  }
+
+  async testPerformanceImpact() {
+    console.log('🚀 Testing Authentication Performance...');
+    console.log('-'.repeat(50));
+
+    const performanceResults = {};
+
+    // Test JWT Performance
+    try {
+      console.log('  ⚡ Testing JWT operation performance...');
+      const user = this.testUsers.valid;
+      const iterations = 1000;
+
+      const genStart = Date.now();
+      for (let i = 0; i < iterations; i++) {
+        this.authService.generateAccessToken(user);
+      }
+      const genTime = Date.now() - genStart;
+      const genAvg = genTime / iterations;
+
+      const token = this.authService.generateAccessToken(user);
+      const verifyStart = Date.now();
+      for (let i = 0; i < iterations; i++) {
+        await this.authService.verifyAccessToken(token);
+      }
+      const verifyTime = Date.now() - verifyStart;
+      const verifyAvg = verifyTime / iterations;
+
+      performanceResults.jwtOperations = {
+        generation: {
+          totalTime: genTime,
+          averageTime: genAvg,
+          operationsPerSecond: Math.round(1000 / genAvg)
+        },
+        verification: {
+          totalTime: verifyTime,
+          averageTime: verifyAvg,
+          operationsPerSecond: Math.round(1000 / verifyAvg)
+        }
+      };
+
+      console.log(`    📊 JWT Generation: ${genAvg.toFixed(2)}ms avg, ${Math.round(1000 / genAvg)} ops/sec`);
+      console.log(`    📊 JWT Verification: ${verifyAvg.toFixed(2)}ms avg, ${Math.round(1000 / verifyAvg)} ops/sec`);
+    } catch (error) {
+      console.log(`    ❌ JWT performance test failed: ${error.message}`);
+    }
+
+    this.testResults.performance = performanceResults;
+    console.log('✅ Performance Impact testing completed\n');
+  }
+
+  async generateSecurityReport() {
+    console.log('📋 Generating Security Assessment Report...');
+    console.log('-'.repeat(50));
+
+    const summary = this.generateSummary();
+    const recommendations = this.generateRecommendations();
+    const productionReadiness = this.assessProductionReadiness();
+
+    // Write comprehensive report
+    const reportContent = this.formatReport({
+      timestamp: this.testResults.timestamp,
+      summary,
+      detailedResults: this.testResults,
+      recommendations,
+      productionReadiness
+    });
+
+    try {
+      require('fs').writeFileSync('/Users/edsaga/nasa_system7_portal/server/AUTHENTICATION_SECURITY_REPORT.md', reportContent);
+      console.log('    ✅ Security report written to AUTHENTICATION_SECURITY_REPORT.md');
+    } catch (error) {
+      console.log(`    ⚠️ Could not write report file: ${error.message}`);
+    }
+
+    // Display summary
+    console.log('\n📊 SECURITY ASSESSMENT SUMMARY:');
+    console.log('-'.repeat(60));
+    console.log(`✅ Total Tests Passed: ${summary.totalPassed}`);
+    console.log(`❌ Total Tests Failed: ${summary.totalFailed}`);
+    console.log(`📈 Success Rate: ${summary.successRate}%`);
+    console.log(`🎯 Critical Security Issues: ${summary.criticalIssues}`);
+    console.log(`⚠️ Warnings: ${summary.warnings}`);
+    console.log(`🚀 Production Readiness: ${productionReadiness.score}%`);
+
+    if (productionReadiness.ready) {
+      console.log('\n🎉 AUTHENTICATION SYSTEM READY FOR PRODUCTION!');
+    } else {
+      console.log('\n⚠️ AUTHENTICATION SYSTEM NEEDS ATTENTION BEFORE PRODUCTION');
+    }
+
+    console.log('\n📋 Key Recommendations:');
+    recommendations.slice(0, 5).forEach((rec, index) => {
+      console.log(`  ${index + 1}. ${rec}`);
+    });
+  }
+
+  generateSummary() {
+    let totalPassed = 0;
+    let totalFailed = 0;
+    let criticalIssues = 0;
+    let warnings = 0;
+
+    const categories = ['jwt', 'oauth', 'mfa', 'security'];
+
+    categories.forEach(category => {
+      if (this.testResults[category]) {
+        Object.values(this.testResults[category]).forEach(result => {
+          if (result.passed !== undefined) {
+            totalPassed += result.passed;
+            totalFailed += result.failed;
+          }
+        });
+      }
+    });
+
+    this.testResults.vulnerabilities?.forEach(vuln => {
+      if (vuln.status === 'FAIL') {
+        criticalIssues++;
+      } else if (vuln.status === 'WARNING') {
+        warnings++;
+      }
+    });
+
+    const totalTests = totalPassed + totalFailed;
+    const successRate = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
+
+    return {
+      totalPassed,
+      totalFailed,
+      totalTests,
+      successRate,
+      criticalIssues,
+      warnings
+    };
+  }
+
+  generateRecommendations() {
+    const recommendations = [];
+
+    if (this.testResults.jwt?.tokenBlacklisting?.failed > 0) {
+      recommendations.push('Implement proper JWT token blacklisting for enhanced security');
+    }
+
+    if (this.testResults.security?.rateLimiting?.failed > 0) {
+      recommendations.push('Fix rate limiting implementation to prevent brute force attacks');
+    }
+
+    if (this.testResults.mfa?.tokenVerification?.failed > 0) {
+      recommendations.push('Fix MFA token verification logic for reliable 2FA');
+    }
+
+    if (this.testResults.vulnerabilities?.some(v => v.status === 'FAIL')) {
+      recommendations.push('Address critical security vulnerabilities before production deployment');
+    }
+
+    if (this.testResults.performance?.jwtOperations?.generation?.averageTime > 10) {
+      recommendations.push('Optimize JWT token generation for better performance');
+    }
+
+    recommendations.push('Implement comprehensive logging and monitoring for security events');
+    recommendations.push('Set up automated security scanning in CI/CD pipeline');
+    recommendations.push('Regular security audits and penetration testing');
+    recommendations.push('Implement proper secrets management for production');
+
+    return recommendations;
+  }
+
+  assessProductionReadiness() {
+    const summary = this.generateSummary();
+
+    let score = summary.successRate;
+    score -= summary.criticalIssues * 10;
+    score -= summary.warnings * 5;
+    score = Math.max(0, Math.min(100, score));
+
+    return {
+      score,
+      ready: score >= 90 && summary.criticalIssues === 0,
+      issues: summary.criticalIssues,
+      warnings: summary.warnings,
+      summary: score >= 90 ? 'READY FOR PRODUCTION' :
+              score >= 80 ? 'NEEDS MINOR FIXES' :
+              score >= 70 ? 'NEEDS MAJOR FIXES' : 'NOT READY'
+    };
+  }
+
+  formatReport(report) {
+    return `# NASA System 7 Portal - Authentication Security Assessment Report
+
+**Generated:** ${report.timestamp}
+**Assessment Type:** Comprehensive Authentication System Validation
+**Phase:** Phase 3 - Security and Authentication Testing
+
+## Executive Summary
+
+This report provides a comprehensive security assessment of the NASA System 7 Portal's authentication system.
+
+### Key Metrics
+- **Total Tests:** ${report.summary.totalTests}
+- **Tests Passed:** ${report.summary.totalPassed}
+- **Tests Failed:** ${report.summary.totalFailed}
+- **Success Rate:** ${report.summary.successRate}%
+- **Critical Issues:** ${report.summary.criticalIssues}
+- **Warnings:** ${report.summary.warnings}
+- **Production Readiness:** ${report.productionReadiness.score}% - ${report.productionReadiness.summary}
+
+## Test Results Detailed
+
+### JWT Authentication
+${this.formatTestResults(report.detailedResults.jwt)}
+
+### OAuth Integration
+${this.formatTestResults(report.detailedResults.oauth)}
+
+### Multi-Factor Authentication (MFA)
+${this.formatTestResults(report.detailedResults.mfa)}
+
+### Security Controls
+${this.formatTestResults(report.detailedResults.security)}
+
+### Vulnerability Assessment
+${this.formatVulnerabilityResults(report.detailedResults.vulnerabilities)}
+
+### Performance Analysis
+${this.formatPerformanceResults(report.detailedResults.performance)}
+
+## Security Recommendations
+
+### High Priority
+${report.recommendations.slice(0, 3).map(rec => `- ${rec}`).join('\n')}
+
+### Medium Priority
+${report.recommendations.slice(3, 6).map(rec => `- ${rec}`).join('\n')}
+
+### Low Priority
+${report.recommendations.slice(6).map(rec => `- ${rec}`).join('\n')}
+
+## Conclusion
+
+The NASA System 7 Portal authentication system is ${report.productionReadiness.ready ? 'READY' : 'NOT READY'} for production deployment.
+
+**Next Steps:**
+1. Address all critical security findings
+2. Implement recommended security enhancements
+3. Conduct additional penetration testing
+4. Establish continuous security monitoring
+
+---
+*Report generated by NASA System 7 Portal Security Assessment Tool*
+`;
+  }
+
+  formatTestResults(results) {
+    if (!results) return 'No test data available.\n';
+
+    let formatted = '';
+    Object.entries(results).forEach(([category, data]) => {
+      if (data.tests && data.tests.length > 0) {
+        formatted += `#### ${category.charAt(0).toUpperCase() + category.slice(1)}\n`;
+        data.tests.forEach(test => {
+          const status = test.status === 'PASS' ? '✅' : '❌';
+          formatted += `- ${status} ${test.name}: ${test.details || test.error || 'No details'}\n`;
+        });
+        formatted += '\n';
+      }
+    });
+    return formatted || 'No test results available.\n';
+  }
+
+  formatVulnerabilityResults(vulnerabilities) {
+    if (!vulnerabilities || vulnerabilities.length === 0) {
+      return 'No vulnerability tests performed.\n';
+    }
+
+    let formatted = '';
+    vulnerabilities.forEach(vuln => {
+      const status = vuln.status === 'PASS' ? '✅' : vuln.status === 'WARNING' ? '⚠️' : '❌';
+      formatted += `- ${status} ${vuln.test}: ${vuln.details || vuln.error || 'No details'}\n`;
+    });
+    return formatted + '\n';
+  }
+
+  formatPerformanceResults(performance) {
+    if (!performance) return 'No performance data available.\n';
+
+    let formatted = '';
+    Object.entries(performance).forEach(([category, data]) => {
+      formatted += `#### ${category.charAt(0).toUpperCase() + category.slice(1)} Performance\n`;
+      Object.entries(data).forEach(([operation, metrics]) => {
+        formatted += `- **${operation}:** ${metrics.averageTime.toFixed(2)}ms average, ${metrics.operationsPerSecond} ops/sec\n`;
+      });
+      formatted += '\n';
+    });
+    return formatted;
+  }
+
+  assert(condition, message) {
+    if (!condition) {
+      throw new Error(message);
+    }
+  }
+}
+
+// Execute the security test suite
+if (require.main === module) {
+  const securityTest = new StandaloneAuthSecurityTest();
+  securityTest.executeFullTestSuite()
+    .then(() => {
+      console.log('\n🎉 Authentication security testing completed!');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('\n💥 Authentication security testing failed:', error.message);
+      process.exit(1);
+    });
+}
+
+module.exports = StandaloneAuthSecurityTest;

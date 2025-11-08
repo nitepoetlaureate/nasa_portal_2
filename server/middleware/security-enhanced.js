@@ -255,15 +255,28 @@ const securityLogger = (req, res, next) => {
 
 // HTTP Parameter Pollution protection
 const preventParameterPollution = (req, res, next) => {
+  // Skip for Socket.IO requests to prevent conflicts
+  if (req.url && req.url.includes('/socket.io/')) {
+    return next();
+  }
+
   // Convert arrays to single values for security-sensitive parameters
   const securityParams = ['id', 'user', 'password', 'token', 'key', 'secret'];
 
-  for (const param of securityParams) {
-    if (Array.isArray(req.query[param])) {
-      req.query[param] = req.query[param][0]; // Take first value
+  // Only process if query and body exist
+  if (req.query) {
+    for (const param of securityParams) {
+      if (Array.isArray(req.query[param])) {
+        req.query[param] = req.query[param][0]; // Take first value
+      }
     }
-    if (Array.isArray(req.body[param])) {
-      req.body[param] = req.body[param][0]; // Take first value
+  }
+
+  if (req.body) {
+    for (const param of securityParams) {
+      if (Array.isArray(req.body[param])) {
+        req.body[param] = req.body[param][0]; // Take first value
+      }
     }
   }
 
