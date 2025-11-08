@@ -104,26 +104,28 @@ const mockNasaResponses = {
 };
 
 // Mock axios for NASA API calls
-jest.mock('axios', () => ({
-  create: jest.fn(() => ({
-    get: jest.fn((url) => {
-      if (url.includes('apod')) {
-        return Promise.resolve({ data: mockNasaResponses.apod });
-      }
-      if (url.includes('neo')) {
-        return Promise.resolve({ data: mockNasaResponses.neo });
-      }
-      if (url.includes('resource')) {
-        return Promise.resolve({ data: mockNasaResponses.resource });
-      }
-      return Promise.resolve({ data: {} });
-    }),
-  })),
-}));
+const mockAxios = {
+  get: jest.fn((url) => {
+    if (url.includes('apod')) {
+      return Promise.resolve({ data: mockNasaResponses.apod });
+    }
+    if (url.includes('neo')) {
+      return Promise.resolve({ data: mockNasaResponses.neo });
+    }
+    if (url.includes('resource')) {
+      return Promise.resolve({ data: mockNasaResponses.resource });
+    }
+    return Promise.resolve({ data: {} });
+  }),
+  create: jest.fn(() => mockAxios),
+};
+
+jest.mock('axios', () => mockAxios);
 
 // Export mocks for use in tests
 global.mockPool = mockPool;
 global.mockNasaResponses = mockNasaResponses;
+global.mockAxios = mockAxios;
 
 // Helper functions for testing
 global.testHelpers = {
