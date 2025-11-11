@@ -71,6 +71,8 @@
     "cypress": "^15.5.0",
     "eslint": "^8.54.0",
     "eslint-config-react": "^1.1.7",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "identity-obj-proxy": "^3.0.0",
     "jsdom": "^23.0.0",
     "msw": "^2.0.0",
