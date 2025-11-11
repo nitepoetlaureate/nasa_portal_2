@@ -40,7 +40,8 @@
     "security:test": "node scripts/securityTest.js",
     "security:scan": "npm audit && npm run lint && node scripts/securityCheck.js",
     "db:secure": "psql -f config/database-security.sql",
-    "db:init-secure": "npm run db:secure && npm run db:init"
+    "db:init-secure": "npm run db:secure && npm run db:init",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "nasa",
