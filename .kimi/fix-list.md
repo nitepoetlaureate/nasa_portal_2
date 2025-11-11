@@ -50,4 +50,9 @@
 - [ ] **7.2** Implement performance budgets in CI
 - [ ] **7.3** Add lighthouse CI for performance regression detection
 - [ ] **7.4** Set up dependency update automation (Dependabot/ Renovate)
-- [ ] **7.5** Add mutation testing for critical paths
+- [ ] **7.5** Add mutation testing for critical paths- [x] **1.1** Fix critical CVE in express-brute
+- [x] **1.2** Fix critical CVE in underscore 1.3.2-1.12.0
+- [x] **1.3** Fix cookie vulnerability <0.7.0
+- [x] **1.4** Remove or replace deprecated csurf middleware
+- [x] **1.5** Update all dependencies with known vulnerabilities
+- [x] **5.5** Remove unused dependencies
