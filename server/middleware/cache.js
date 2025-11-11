@@ -1,3 +1,5 @@
+/** @typedef {import("redis").RedisClientType} RedisClient */
+/** @typedef {{isConnected: boolean, client: RedisClient|null}} CacheState */
 const redis = require('redis');
 
 class RedisCache {

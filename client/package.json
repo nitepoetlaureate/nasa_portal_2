@@ -32,7 +32,8 @@
     "test:e2e:open": "cypress open",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "analyze": "npm run build && npx vite-bundle-analyzer dist"
+    "analyze": "npm run build && npx vite-bundle-analyzer dist",
+    "type-check": "tsc --noEmit"
   },
   "eslintConfig": {
     "extends": [
@@ -75,6 +76,7 @@
     "msw": "^2.0.0",
     "postcss": "^8.4.32",
     "prettier": "^3.1.0",
+    "prop-types": "^15.8.1",
     "tailwindcss": "^3.3.6",
     "vite": "^7.2.2",
     "vite-bundle-analyzer": "^0.7.0",
